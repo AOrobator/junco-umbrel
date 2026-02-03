@@ -8,6 +8,7 @@ Mobile-first, native-feeling Umbrel app that exposes Sparrow Server capabilities
 - Minimal chrome, high contrast, legible in bright light
 - Progressive disclosure for advanced options
 - Clear error states and recovery paths
+- Expose information only when it is needed and actionable
 
 ## MVP flows
 - Onboarding

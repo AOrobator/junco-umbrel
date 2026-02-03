@@ -60,6 +60,47 @@ body::before {
   z-index: -1;
 }
 
+.is-hidden {
+  display: none !important;
+}
+
+.app.is-locked {
+  filter: blur(2px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 14, 12, 0.45);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  z-index: 50;
+}
+
+.auth-card {
+  width: min(420px, 100%);
+  background: var(--surface);
+  border-radius: 24px;
+  border: 1px solid var(--stroke);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  display: grid;
+  gap: 18px;
+}
+
+.auth-header {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-panel {
+  display: grid;
+  gap: 12px;
+}
+
 .app {
   max-width: 1200px;
   margin: 0 auto;
@@ -407,6 +448,11 @@ p {
   color: var(--accent-strong);
 }
 
+.btn-small {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+}
+
 .pill {
   padding: 6px 10px;
   border-radius: 999px;
@@ -434,6 +480,18 @@ p {
 .form-row.split {
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 12px;
+}
+
+.toggle {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.toggle input {
+  accent-color: var(--accent-strong);
 }
 
 label {
@@ -508,6 +566,15 @@ textarea:disabled {
   color: var(--muted);
 }
 
+.seed-panel {
+  border: 1px solid var(--stroke);
+  border-radius: 16px;
+  padding: 16px;
+  background: var(--surface-alt);
+  display: grid;
+  gap: 10px;
+}
+
 .mono {
   font-family: var(--font-mono);
   font-size: 0.85rem;
@@ -565,6 +632,11 @@ textarea:disabled {
   background: var(--surface-alt);
   display: grid;
   gap: 12px;
+}
+
+.review-card {
+  display: grid;
+  gap: 8px;
 }
 
 .review-row {
@@ -626,6 +698,16 @@ textarea:disabled {
   font-weight: 600;
 }
 
+.amount.in {
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.amount.out {
+  color: var(--negative);
+  font-weight: 600;
+}
+
 .status {
   display: grid;
   gap: 4px;
@@ -660,7 +742,7 @@ textarea:disabled {
   pointer-events: none;
 }
 
-.toast.show {
+.toast.is-visible {
   opacity: 1;
   transform: translateY(0);
 }

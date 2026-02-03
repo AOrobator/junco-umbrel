@@ -23,4 +23,20 @@ services:
     ports:
       - "3009:8080"
     depends_on:
+      - adapter
+      - server
+
+  adapter:
+    build:
+      context: .
+      dockerfile: docker/adapter/Dockerfile
+    image: junco-umbrel-adapter:local
+    restart: unless-stopped
+    environment:
+      JUNCO_PORT: 8081
+      JUNCO_NETWORK: mainnet
+      JUNCO_DATA: /data
+    volumes:
+      - ./.junco/adapter:/data
+    depends_on:
       - server

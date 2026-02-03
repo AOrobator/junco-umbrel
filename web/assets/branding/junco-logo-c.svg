@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 400" role="img" aria-label="Junco logo option C">
+  <g transform="translate(40 40) scale(0.3125)">
+    <rect x="0" y="0" width="1024" height="1024" rx="220" fill="#f6f2ea" />
+    <rect x="32" y="32" width="960" height="960" rx="208" fill="none" stroke="#e6dccf" stroke-width="12" />
+
+    <g fill="#2b3336">
+      <ellipse cx="610" cy="620" rx="300" ry="210" />
+      <circle cx="360" cy="360" r="120" />
+      <polygon points="820,560 980,640 820,720" />
+    </g>
+
+    <ellipse cx="540" cy="690" rx="170" ry="130" fill="#f6f2ea" />
+    <circle cx="410" cy="350" r="12" fill="#f6f2ea" />
+
+    <polygon points="220,360 300,330 300,390" fill="#d08a6b" />
+
+    <polygon points="860,600 940,640 860,680" fill="#f6f2ea" />
+    <polygon points="840,620 900,640 840,660" fill="#f6f2ea" />
+
+    <path d="M 470 520 Q 540 470 620 490" stroke="#d8c8b6" stroke-width="24" stroke-linecap="round" fill="none" />
+  </g>
+
+  <text
+    x="420"
+    y="250"
+    font-size="200"
+    font-family="'Fraunces', 'Iowan Old Style', 'Georgia', serif"
+    font-weight="600"
+    fill="#1f2628"
+    letter-spacing="2"
+  >
+    Junco
+  </text>
+  <rect x="420" y="275" width="300" height="10" rx="5" fill="#d08a6b" />
+</svg>

@@ -9,3 +9,5 @@ build/
 coverage/
 .tmp/
 .junco/
+output/
+tmp/

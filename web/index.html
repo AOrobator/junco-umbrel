@@ -9,6 +9,55 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div class="auth-overlay is-hidden" id="auth-overlay" role="dialog" aria-modal="true">
+      <div class="auth-card">
+        <div class="auth-header">
+          <div class="brand">
+            <div class="brand-mark">
+              <span></span>
+            </div>
+            <div>
+              <p class="brand-name">Junco</p>
+              <p class="brand-sub">Secure wallet access</p>
+            </div>
+          </div>
+          <p class="muted">
+            Your password unlocks your local wallet storage. It never leaves this device.
+          </p>
+        </div>
+
+        <div class="auth-panel" id="auth-setup-panel">
+          <h2>Set your password</h2>
+          <p class="muted">
+            Create a password to protect wallet access, seeds, and private connection settings.
+          </p>
+          <form id="auth-setup-form" class="form">
+            <div class="form-row">
+              <label>Password</label>
+              <input name="password" type="password" minlength="10" required />
+            </div>
+            <div class="form-row">
+              <label>Confirm password</label>
+              <input name="confirm" type="password" minlength="10" required />
+            </div>
+            <button class="btn" type="submit">Set password</button>
+          </form>
+        </div>
+
+        <div class="auth-panel is-hidden" id="auth-login-panel">
+          <h2>Unlock Junco</h2>
+          <p class="muted">Enter your password to continue.</p>
+          <form id="auth-login-form" class="form">
+            <div class="form-row">
+              <label>Password</label>
+              <input name="password" type="password" required />
+            </div>
+            <button class="btn" type="submit">Unlock</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <div class="app">
       <header class="app-header">
         <div class="brand">
@@ -46,6 +95,7 @@
         <div class="header-status">
           <span class="pill" id="network-pill">Mainnet</span>
           <span class="pill muted" id="header-electrum">Disconnected</span>
+          <button class="btn ghost btn-small is-hidden" id="auth-logout" type="button">Lock</button>
         </div>
       </header>
 
@@ -223,7 +273,7 @@
               <h2>All transactions</h2>
             </div>
             <div class="chip-row">
-              <button class="chip" data-filter="all">All</button>
+              <button class="chip is-active" data-filter="all">All</button>
               <button class="chip" data-filter="in">Incoming</button>
               <button class="chip" data-filter="out">Outgoing</button>
             </div>
@@ -261,53 +311,67 @@
                     <label>Wallet name</label>
                     <input name="name" type="text" placeholder="Junco Primary" required />
                   </div>
+                  <div class="form-row">
+                    <label>Script</label>
+                    <select name="script">
+                      <option value="P2WPKH">P2WPKH (Native SegWit)</option>
+                      <option value="P2TR">P2TR (Taproot)</option>
+                      <option value="P2SH">P2SH (Legacy compatible)</option>
+                    </select>
+                  </div>
+                  <div class="form-row">
+                    <label class="toggle">
+                      <input name="generate" type="checkbox" checked />
+                      <span>Generate a new seed phrase</span>
+                    </label>
+                  </div>
                   <div class="form-row split">
                     <div>
-                      <label>Wallet type</label>
-                      <select name="type">
-                        <option value="Singlesig">Singlesig</option>
-                        <option value="Multisig">Multisig</option>
+                      <label>Entropy</label>
+                      <select name="entropy">
+                        <option value="128">128-bit (12 words)</option>
+                        <option value="160">160-bit (15 words)</option>
+                        <option value="192">192-bit (18 words)</option>
+                        <option value="224">224-bit (21 words)</option>
+                        <option value="256">256-bit (24 words)</option>
                       </select>
                     </div>
                     <div>
-                      <label>Script</label>
-                      <select name="script">
-                        <option value="P2WPKH">P2WPKH</option>
-                        <option value="P2TR">P2TR (Taproot)</option>
-                        <option value="P2SH">P2SH</option>
-                      </select>
+                      <label>Passphrase (optional)</label>
+                      <input name="passphrase" type="password" placeholder="Extra word" />
                     </div>
                   </div>
                   <div class="form-row">
-                    <label>Network</label>
-                    <select name="network">
-                      <option value="mainnet">Mainnet</option>
-                      <option value="testnet">Testnet</option>
-                    </select>
+                    <label>Mnemonic (if not generating)</label>
+                    <textarea
+                      name="mnemonic"
+                      rows="3"
+                      placeholder="abandon ability able about above absent ..."
+                    ></textarea>
                   </div>
                   <button class="btn" type="submit">Create wallet</button>
                 </form>
+                <div class="seed-panel is-hidden" id="mnemonic-panel">
+                  <p class="card-label">Seed phrase</p>
+                  <p class="mono" id="created-mnemonic">—</p>
+                  <p class="muted">
+                    Write this down offline. Anyone with this phrase can spend your funds.
+                  </p>
+                  <div class="request-actions">
+                    <button class="btn ghost" id="copy-mnemonic" type="button">Copy seed</button>
+                    <button class="btn ghost" id="clear-mnemonic" type="button">I wrote it down</button>
+                  </div>
+                </div>
               </details>
 
               <details class="disclosure" id="open-wallet-disclosure">
                 <summary>Open existing wallet</summary>
                 <form id="open-wallet-form" class="form">
                   <div class="form-row">
-                    <label>Descriptor or wallet file</label>
-                    <textarea name="descriptor" rows="3" placeholder="wpkh([fingerprint/84h/0h/0h]xpub...)" required></textarea>
-                  </div>
-                  <div class="form-row split">
-                    <div>
-                      <label>Wallet name</label>
-                      <input name="name" type="text" placeholder="Coldcard" required />
-                    </div>
-                    <div>
-                      <label>Network</label>
-                      <select name="network">
-                        <option value="mainnet">Mainnet</option>
-                        <option value="testnet">Testnet</option>
-                      </select>
-                    </div>
+                    <label>Choose a wallet</label>
+                    <select name="wallet" id="open-wallet-select" required>
+                      <option value="">Select a wallet</option>
+                    </select>
                   </div>
                   <button class="btn ghost" type="submit">Open wallet</button>
                 </form>
@@ -352,8 +416,8 @@
                     </div>
                   </div>
                   <div class="form-row">
-                    <label>TLS fingerprint (optional)</label>
-                    <input name="fingerprint" type="text" placeholder="AB:CD:EF..." />
+                    <label>Certificate path (optional)</label>
+                    <input name="certificate" type="text" placeholder="/data/electrum/cert.pem" />
                   </div>
                   <button class="btn" type="submit">Test connection</button>
                 </form>

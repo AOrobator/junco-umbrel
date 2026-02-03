@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 400" role="img" aria-label="Junco logo option B">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f6f1e9" />
+      <stop offset="100%" stop-color="#e6d9c8" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f0a14a" />
+      <stop offset="100%" stop-color="#f3c06b" />
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(40 40) scale(0.3125)">
+    <rect x="64" y="64" width="896" height="896" rx="200" fill="url(#bg)" />
+    <rect x="96" y="96" width="832" height="832" rx="180" fill="none" stroke="#d9cbbb" stroke-width="14" />
+
+    <path
+      d="M 700 240 V 620 Q 700 760 560 760 Q 420 760 360 640"
+      fill="none"
+      stroke="#0b1b2a"
+      stroke-width="70"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <path
+      d="M 270 360 Q 340 270 450 250"
+      fill="none"
+      stroke="url(#accent)"
+      stroke-width="28"
+      stroke-linecap="round"
+    />
+    <path
+      d="M 290 430 Q 360 360 470 340"
+      fill="none"
+      stroke="#f0a14a"
+      stroke-width="20"
+      stroke-linecap="round"
+      opacity="0.8"
+    />
+
+    <path d="M 610 250 L 710 210 L 690 300 Z" fill="#f0a14a" />
+    <circle cx="360" cy="640" r="24" fill="#0b1b2a" />
+  </g>
+
+  <text
+    x="420"
+    y="240"
+    font-size="180"
+    font-family="'Space Grotesk', 'Sora', 'Avenir Next', sans-serif"
+    font-weight="600"
+    letter-spacing="10"
+    fill="#0b1b2a"
+  >
+    JUNCO
+  </text>
+  <path d="M 420 270 H 980" stroke="url(#accent)" stroke-width="12" stroke-linecap="round" />
+</svg>

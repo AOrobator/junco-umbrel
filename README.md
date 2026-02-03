@@ -35,7 +35,7 @@ Status: scaffold / pre-alpha.
 Prereqs: Docker Desktop
 
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
 
 Open `http://localhost:3009` to see the placeholder web UI.

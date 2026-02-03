@@ -1,0 +1,3 @@
+[submodule "vendor/sparrow"]
+	path = vendor/sparrow
+	url = https://github.com/sparrowwallet/sparrow.git

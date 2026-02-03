@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Junco icon option D">
+  <rect x="0" y="0" width="1024" height="1024" rx="220" fill="#f6f2ea" />
+  <rect x="32" y="32" width="960" height="960" rx="208" fill="none" stroke="#e6dccf" stroke-width="12" />
+
+  <path
+    d="M 420 220 L 420 610 C 420 760 580 840 720 760"
+    fill="none"
+    stroke="#2b3336"
+    stroke-width="140"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <circle cx="310" cy="240" r="72" fill="#2b3336" />
+  <polygon points="240,240 160,210 170,270" fill="#d08a6b" />
+
+  <path d="M 470 470 Q 560 420 650 440" fill="none" stroke="#d08a6b" stroke-width="26" stroke-linecap="round" />
+
+  <path d="M 640 760 L 740 800" stroke="#f6f2ea" stroke-width="28" stroke-linecap="round" />
+  <path d="M 610 735 L 705 770" stroke="#f6f2ea" stroke-width="20" stroke-linecap="round" />
+</svg>
