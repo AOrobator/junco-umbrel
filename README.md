@@ -29,6 +29,18 @@ Status: scaffold / pre-alpha.
 - `umbrel/` App packaging for Umbrel (docker-compose, manifest, exports).
 - `web/` Web UI (mobile-first).
 - `docs/` Product and technical notes.
+- `docker/` Local dev Dockerfiles.
+
+## Local run
+Prereqs: Docker Desktop
+
+```bash
+docker compose up --build
+```
+
+Open `http://localhost:3009` to see the placeholder web UI.
+
+Note: Sparrow Server runs in headless (terminal) mode today. The web API bridge is not implemented yet.
 
 ## Notes
 This project is not affiliated with Sparrow Wallet or Umbrel.
