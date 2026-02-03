@@ -22,6 +22,7 @@ const state = {
   pendingReceive: null,
   pendingSend: null,
   lastMnemonic: null,
+  pendingSeedWallet: null,
   txFilter: "all",
   electrum: {
     config: null,
@@ -231,6 +232,7 @@ async function logout() {
   state.auth.authenticated = false;
   state.auth.csrfToken = null;
   state.lastMnemonic = null;
+  state.pendingSeedWallet = null;
   showAuthOverlay();
 }
 
@@ -415,6 +417,7 @@ function renderSparkline(history) {
     elements.sparklineLine.setAttribute("points", "");
     elements.sparklineArea.setAttribute("d", "");
     elements.homeTrend.textContent = "No history yet";
+    elements.homeTrend.classList.remove("negative");
     return;
   }
   const points = history.map((point, index) => ({
@@ -442,6 +445,7 @@ function renderSparkline(history) {
   const trend = last - first;
   const trendText = trend >= 0 ? `Up ${formatBtcFromSats(trend, 6)}` : `Down ${formatBtcFromSats(Math.abs(trend), 6)}`;
   elements.homeTrend.textContent = trendText;
+  elements.homeTrend.classList.toggle("negative", trend < 0);
 }
 
 function renderHomeActivity(transactions) {
@@ -455,23 +459,32 @@ function renderHomeActivity(transactions) {
   }
   const fragment = document.createDocumentFragment();
   transactions.forEach((tx) => {
+    const item = document.createElement("div");
+    item.className = "activity-item";
+
     const row = document.createElement("div");
     row.className = "activity-row";
 
     const meta = document.createElement("div");
     const title = document.createElement("p");
-    title.textContent = tx.label || "Transaction";
+    const directionLabel = tx.valueSats >= 0 ? "Incoming" : "Outgoing";
+    title.textContent = tx.label || directionLabel;
     const sub = document.createElement("p");
     sub.className = "muted";
-    sub.textContent = `${formatDate(tx.timestamp)} · ${tx.confirmations} conf`;
+    const confirmations = Number.isFinite(tx.confirmations) ? tx.confirmations : 0;
+    const status = confirmations > 0 ? `${confirmations} conf` : "Pending";
+    const time = formatTime(tx.timestamp);
+    const dateText = time ? `${formatDate(tx.timestamp)} · ${time}` : formatDate(tx.timestamp);
+    sub.textContent = `${dateText} · ${status}`;
     meta.append(title, sub);
 
     const amount = document.createElement("p");
-    amount.className = tx.valueSats >= 0 ? "amount in" : "amount out";
+    amount.className = tx.valueSats >= 0 ? "activity-amount in" : "activity-amount out";
     amount.textContent = formatBtcFromSats(Math.abs(tx.valueSats), 6);
 
     row.append(meta, amount);
-    fragment.appendChild(row);
+    item.appendChild(row);
+    fragment.appendChild(item);
   });
   elements.homeActivityList.appendChild(fragment);
 }
@@ -497,24 +510,32 @@ function renderTransactions() {
 
   const fragment = document.createDocumentFragment();
   filtered.forEach((tx) => {
+    const item = document.createElement("div");
+    item.className = "transaction";
+
     const row = document.createElement("div");
     row.className = "transaction-row";
 
     const meta = document.createElement("div");
     const title = document.createElement("p");
-    title.textContent = tx.label || "Transaction";
+    const directionLabel = tx.valueSats >= 0 ? "Incoming" : "Outgoing";
+    title.textContent = tx.label || directionLabel;
     const sub = document.createElement("p");
     sub.className = "muted";
-    const status = tx.confirmations > 0 ? `${tx.confirmations} conf` : "Pending";
-    sub.textContent = `${formatDate(tx.timestamp)} · ${status}`;
+    const confirmations = Number.isFinite(tx.confirmations) ? tx.confirmations : 0;
+    const status = confirmations > 0 ? `${confirmations} conf` : "Pending";
+    const time = formatTime(tx.timestamp);
+    const dateText = time ? `${formatDate(tx.timestamp)} · ${time}` : formatDate(tx.timestamp);
+    sub.textContent = `${dateText} · ${status}`;
     meta.append(title, sub);
 
     const amount = document.createElement("p");
-    amount.className = tx.valueSats >= 0 ? "amount in" : "amount out";
+    amount.className = tx.valueSats >= 0 ? "transaction-amount in" : "transaction-amount out";
     amount.textContent = formatBtcFromSats(Math.abs(tx.valueSats), 6);
 
     row.append(meta, amount);
-    fragment.appendChild(row);
+    item.appendChild(row);
+    fragment.appendChild(item);
   });
   elements.transactionsList.appendChild(fragment);
 }
@@ -670,10 +691,13 @@ function attachHandlers() {
 
       if (response.mnemonic) {
         state.lastMnemonic = response.mnemonic;
+        state.pendingSeedWallet = name;
         renderMnemonicPanel();
-        showToast("Wallet created. Save your seed phrase now.");
+        elements.createDisclosure.open = true;
+        showToast("Wallet created. Save your seed phrase to continue.");
       } else {
         state.lastMnemonic = null;
+        state.pendingSeedWallet = null;
         renderMnemonicPanel();
         showToast("Wallet created.");
       }
@@ -681,7 +705,11 @@ function attachHandlers() {
       elements.createWalletForm.reset();
       await refreshWalletList();
       await openWallet(name);
-      setView("home");
+      if (!state.pendingSeedWallet) {
+        setView("home");
+      } else {
+        setView("settings");
+      }
     } catch (error) {
       showToast(error.message || "Unable to create wallet");
     }
@@ -797,9 +825,15 @@ function attachHandlers() {
 
   if (elements.clearMnemonic) {
     elements.clearMnemonic.addEventListener("click", () => {
+      const hadPending = Boolean(state.pendingSeedWallet);
       state.lastMnemonic = null;
+      state.pendingSeedWallet = null;
       renderMnemonicPanel();
+      elements.createDisclosure.open = false;
       showToast("Seed phrase cleared");
+      if (hadPending) {
+        setView("home");
+      }
     });
   }
 

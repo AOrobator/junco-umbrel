@@ -11,3 +11,5 @@ coverage/
 .junco/
 output/
 tmp/
+playwright-report/
+test-results/

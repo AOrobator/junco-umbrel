@@ -17,7 +17,7 @@ import java.security.SecureRandom
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
-class WalletService(private val electrum: ElectrumClient) {
+class WalletService(private val electrum: ElectrumGateway) {
     data class WalletHandle(val wallet: Wallet, val storage: Storage, var lastUpdated: Long? = null)
 
     private val wallets = ConcurrentHashMap<String, WalletHandle>()
