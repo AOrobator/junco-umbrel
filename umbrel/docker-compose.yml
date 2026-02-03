@@ -3,11 +3,11 @@ version: "3.7"
 services:
   app_proxy:
     environment:
-      APP_HOST: sparrow-umbrel_web_1
+      APP_HOST: junco_web_1
       APP_PORT: 8080
 
   web:
-    image: ghcr.io/aorobator/sparrow-umbrel-web:0.1.0
+    image: ghcr.io/aorobator/junco-umbrel-web:0.1.0
     restart: on-failure
     stop_grace_period: 1m
     environment:
@@ -17,7 +17,7 @@ services:
       - server
 
   server:
-    image: ghcr.io/aorobator/sparrow-umbrel-server:0.1.0
+    image: ghcr.io/aorobator/junco-umbrel-server:0.1.0
     restart: on-failure
     stop_grace_period: 1m
     volumes:
