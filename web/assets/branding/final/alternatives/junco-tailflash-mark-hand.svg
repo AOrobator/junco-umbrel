@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Junco tailflash mark (hand simplified)">
+  <path
+    d="M 210 560
+       Q 320 470 520 455
+       Q 720 440 840 520
+       Q 900 565 920 610
+       Q 865 670 740 705
+       Q 610 770 460 745
+       Q 330 710 260 655
+       L 200 690
+       L 220 625
+       Q 185 610 165 600
+       L 210 560
+       Z"
+    fill="#2b3336"
+  />
+  <path
+    d="M 190 470
+       L 520 485
+       L 360 610
+       L 150 540
+       Z"
+    fill="#9aa58a"
+  />
+</svg>

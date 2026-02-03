@@ -78,6 +78,7 @@ fun Application.juncoModule(
             call.respond(cause.status, ErrorResponse(cause.message ?: "Request failed"))
         }
         exception<Throwable> { call, cause ->
+            call.application.environment.log.error("Unhandled server error", cause)
             call.respond(HttpStatusCode.InternalServerError, ErrorResponse(cause.message ?: "Server error"))
         }
     }

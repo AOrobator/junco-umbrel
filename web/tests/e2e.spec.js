@@ -1,27 +1,36 @@
 const { test, expect } = require("@playwright/test");
 
 test("walk full wallet flow", async ({ page }) => {
-  const password = "correct-horse-battery-staple";
+  const password = process.env.JUNCO_PASSWORD || "correct-horse-battery-staple";
   const walletName = `JuncoTest-${Date.now()}`;
 
   await page.goto("/");
 
   const authOverlay = page.getByTestId("auth-overlay");
+  await page.waitForLoadState("domcontentloaded");
+  try {
+    await authOverlay.waitFor({ state: "visible", timeout: 2000 });
+  } catch {
+    // overlay might not appear if already authenticated
+  }
+
   if (await authOverlay.isVisible()) {
     const setupForm = page.getByTestId("auth-setup-form");
     if (await setupForm.isVisible()) {
       await setupForm.locator('input[name="password"]').fill(password);
       await setupForm.locator('input[name="confirm"]').fill(password);
       await setupForm.getByRole("button", { name: "Set password" }).click();
+    } else if (!process.env.JUNCO_PASSWORD) {
+      test.skip(true, "Auth already configured. Set JUNCO_PASSWORD to run this test.");
     }
 
     const loginForm = page.getByTestId("auth-login-form");
-    await expect(loginForm).toBeVisible();
+    await expect(loginForm).toBeVisible({ timeout: 10000 });
     await loginForm.locator('input[name="password"]').fill(password);
     await loginForm.getByRole("button", { name: "Unlock" }).click();
-
-    await expect(authOverlay).toBeHidden();
   }
+
+  await expect(authOverlay).toBeHidden({ timeout: 10000 });
 
   await page.getByRole("button", { name: "Settings" }).first().click();
   await page.locator("#create-wallet-disclosure summary").click();

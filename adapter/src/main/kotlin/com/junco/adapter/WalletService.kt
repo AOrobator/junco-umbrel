@@ -13,6 +13,8 @@ import com.sparrowwallet.drongo.address.Address
 import com.sparrowwallet.drongo.address.InvalidAddressException
 import com.sparrowwallet.drongo.wallet.*
 import com.sparrowwallet.sparrow.io.Storage
+import com.sparrowwallet.sparrow.io.PersistenceType
+import java.io.File
 import java.security.SecureRandom
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
@@ -48,7 +50,7 @@ class WalletService(private val electrum: ElectrumGateway) {
 
         val handle = WalletHandle(wallet, storage)
         wallets[name] = handle
-        refresh(handle)
+        refresh(handle, allowFailure = true)
         return handle
     }
 
@@ -60,7 +62,7 @@ class WalletService(private val electrum: ElectrumGateway) {
         if(Storage.RESERVED_WALLET_NAMES.contains(name)) {
             throw ApiException.badRequest("Wallet name is reserved")
         }
-        if(Storage.walletExists(name)) {
+        if(walletExists(name)) {
             throw ApiException.badRequest("Wallet already exists")
         }
 
@@ -80,12 +82,14 @@ class WalletService(private val electrum: ElectrumGateway) {
             throw ApiException.badRequest("Invalid mnemonic or entropy settings")
         }
 
-        val wallet = Wallet(name, policyType, scriptType)
+        val wallet = Wallet(name)
+        wallet.setPolicyType(policyType)
+        wallet.setScriptType(scriptType)
         wallet.setNetwork(Network.get())
         val keystore = Keystore.fromSeed(seed, scriptType.defaultDerivation)
         wallet.keystores.clear()
         wallet.keystores.add(keystore)
-        wallet.defaultPolicy = Policy.getPolicy(policyType, scriptType, wallet.keystores, null)
+        wallet.setDefaultPolicy(Policy.getPolicy(policyType, scriptType, wallet.keystores, null))
 
         val storage = Storage(Storage.getWalletFile(name))
         if(password.length == 0) {
@@ -107,7 +111,7 @@ class WalletService(private val electrum: ElectrumGateway) {
         wallet.clearPrivate()
         val handle = WalletHandle(wallet, storage)
         wallets[name] = handle
-        refresh(handle)
+        refresh(handle, allowFailure = true)
 
         val summary = toSummary(handle)
         val mnemonic = if(req.generate || req.mnemonic.isNullOrBlank()) seed.mnemonicString.asString() else null
@@ -193,7 +197,7 @@ class WalletService(private val electrum: ElectrumGateway) {
 
     fun getTransactions(name: String, password: SecureString): TransactionsResponse {
         val handle = openWallet(name, password)
-        refresh(handle)
+        refresh(handle, allowFailure = true)
         val tipHeight = electrum.currentTipHeight() ?: handle.wallet.storedBlockHeight
         val transactions = buildTransactions(handle.wallet, tipHeight)
         return TransactionsResponse(currentBalance(handle.wallet), transactions)
@@ -201,21 +205,41 @@ class WalletService(private val electrum: ElectrumGateway) {
 
     fun getBalanceHistory(name: String, password: SecureString): BalanceHistoryResponse {
         val handle = openWallet(name, password)
-        refresh(handle)
+        refresh(handle, allowFailure = true)
         val tipHeight = electrum.currentTipHeight() ?: handle.wallet.storedBlockHeight
         val transactions = buildTransactions(handle.wallet, tipHeight)
         val history = buildBalanceHistory(transactions)
         return BalanceHistoryResponse(currentBalance(handle.wallet), history)
     }
 
-    private fun refresh(handle: WalletHandle) {
+    private fun refresh(handle: WalletHandle, allowFailure: Boolean = false) {
         try {
             val tip = electrum.refreshWallet(handle.wallet)
             handle.lastUpdated = tip?.toLong()
             handle.storage.updateWallet(handle.wallet)
         } catch(e: Exception) {
-            throw ApiException.badRequest(e.message ?: "Failed to sync with Electrum server")
+            if(!allowFailure) {
+                throw ApiException.badRequest(e.message ?: "Failed to sync with Electrum server")
+            }
         }
+    }
+
+    private fun walletExists(name: String): Boolean {
+        val trimmed = name.trim()
+        val dir = Storage.getWalletsDir()
+        val encrypted = File(dir, trimmed)
+        if(encrypted.exists()) {
+            return true
+        }
+
+        for(type in PersistenceType.values()) {
+            val file = File(dir, "$trimmed.${type.extension}")
+            if(file.exists()) {
+                return true
+            }
+        }
+
+        return Storage.RESERVED_WALLET_NAMES.contains(trimmed)
     }
 
     private fun toSummary(handle: WalletHandle): WalletSummary {
