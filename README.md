@@ -1,4 +1,4 @@
-# Junco — Sparrow for Umbrel
+# Junco - Sparrow for Umbrel
 
 Unofficial Umbrel app that packages Sparrow Server with a mobile-first web UI.
 
