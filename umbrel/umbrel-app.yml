@@ -1,0 +1,20 @@
+manifestVersion: 1
+id: sparrow-umbrel
+category: finance
+name: Sparrow
+version: 0.1.0
+tagline: Mobile-first Bitcoin wallet on Umbrel
+description: >
+  Run Sparrow Server on Umbrel with a mobile-first web UI.
+  Connect to your local Bitcoin and Electrs services by default.
+  Unofficial community project.
+developer: Andrew Orobator
+website: https://github.com/aorobator/sparrow-umbrel
+repo: https://github.com/aorobator/sparrow-umbrel
+support: https://github.com/aorobator/sparrow-umbrel/issues
+port: 3009
+dependencies:
+  - bitcoin
+  - electrs
+gallery: []
+releaseNotes: ""
