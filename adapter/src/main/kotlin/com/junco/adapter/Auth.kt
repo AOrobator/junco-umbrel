@@ -30,8 +30,14 @@ class AuthStore(private val file: Path, private val json: Json) {
     }
 
     fun save(record: AuthRecord) {
-        Files.createDirectories(file.parent)
-        Files.writeString(file, json.encodeToString(record))
+        try {
+            Files.createDirectories(file.parent)
+            Files.writeString(file, json.encodeToString(record))
+        } catch(e: Exception) {
+            throw ApiException.internal(
+                "Unable to save auth data. Ensure the data volume is mounted and writable, then restart the app."
+            )
+        }
     }
 }
 

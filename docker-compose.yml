@@ -10,7 +10,11 @@ services:
     environment:
       SPARROW_NETWORK: mainnet
     volumes:
-      - ./.junco/server:/data
+      - type: bind
+        source: ./.junco/server
+        target: /data
+        bind:
+          create_host_path: true
     tty: true
     stdin_open: true
 
@@ -37,6 +41,10 @@ services:
       JUNCO_NETWORK: mainnet
       JUNCO_DATA: /data
     volumes:
-      - ./.junco/adapter:/data
+      - type: bind
+        source: ./.junco/adapter
+        target: /data
+        bind:
+          create_host_path: true
     depends_on:
       - server

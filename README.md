@@ -45,5 +45,8 @@ Note: Sparrow Server runs in headless (terminal) mode today. The web API bridge 
 ## Notes
 This project is not affiliated with Sparrow Wallet or Umbrel.
 
+## Test Accounts
+See `docs/qa/TEST_CREDENTIALS.md` for local auth + QA wallet guidance.
+
 ## License
 Apache-2.0

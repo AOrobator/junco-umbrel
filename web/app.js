@@ -18,6 +18,9 @@ const state = {
   walletSummary: null,
   balanceSats: 0,
   balanceHistory: [],
+  priceUsd: null,
+  priceUpdatedAt: null,
+  priceSource: null,
   transactions: [],
   pendingReceive: null,
   pendingSend: null,
@@ -114,6 +117,18 @@ function showToast(message, timeout = 2400) {
 function formatBtcFromSats(sats, decimals = 8) {
   const value = sats / 100_000_000;
   return `${value.toFixed(decimals)} BTC`;
+}
+
+const usdFormatter = new Intl.NumberFormat(undefined, {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 2,
+});
+
+function formatUsdFromSats(sats, rateUsd) {
+  if (!Number.isFinite(rateUsd) || rateUsd <= 0) return "—";
+  const value = (sats / 100_000_000) * rateUsd;
+  return usdFormatter.format(value);
 }
 
 function formatSats(sats) {
@@ -278,7 +293,26 @@ async function refreshWalletData(name) {
     state.balanceHistory = [];
     showToast(error.message || "Unable to refresh wallet data");
   }
+  await refreshPrice();
   render();
+}
+
+async function refreshPrice() {
+  try {
+    const price = await apiFetch("/api/price");
+    const usd = price?.usd;
+    if (Number.isFinite(usd) && usd > 0) {
+      state.priceUsd = usd;
+      state.priceUpdatedAt = price.updatedAt ?? null;
+      state.priceSource = price.source ?? null;
+    } else {
+      state.priceUsd = null;
+      state.priceUpdatedAt = null;
+      state.priceSource = null;
+    }
+  } catch (_) {
+    // Keep the last known quote if the refresh fails.
+  }
 }
 
 async function requestReceive(label) {
@@ -404,7 +438,9 @@ function renderHome() {
   elements.homeWalletName.textContent = state.walletSummary.name;
   elements.homeWalletMeta.textContent = `${state.walletSummary.policyType} · ${state.walletSummary.scriptType}`;
   elements.homeBalance.textContent = formatBtcFromSats(state.balanceSats, 8);
-  elements.homeBalanceFiat.textContent = formatSats(state.balanceSats);
+  const fiatBalance = formatUsdFromSats(state.balanceSats, state.priceUsd);
+  elements.homeBalanceFiat.textContent =
+    fiatBalance === "—" ? formatSats(state.balanceSats) : fiatBalance;
   elements.networkPill.textContent = state.walletSummary.network || "Mainnet";
   renderHomeActions(true);
   renderSparkline(state.balanceHistory);
@@ -520,7 +556,11 @@ function renderTransactions() {
   });
 
   elements.transactionCount.textContent = `${filtered.length} transactions`;
-  elements.transactionBalance.textContent = formatBtcFromSats(state.balanceSats, 6);
+  const transactionFiat = formatUsdFromSats(state.balanceSats, state.priceUsd);
+  elements.transactionBalance.textContent =
+    transactionFiat === "—"
+      ? formatBtcFromSats(state.balanceSats, 6)
+      : `${formatBtcFromSats(state.balanceSats, 6)} · ${transactionFiat}`;
 
   elements.transactionsList.innerHTML = "";
   if (filtered.length === 0) {

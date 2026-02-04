@@ -8,5 +8,6 @@ class ApiException(val status: HttpStatusCode, message: String) : RuntimeExcepti
         fun unauthorized(message: String) = ApiException(HttpStatusCode.Unauthorized, message)
         fun forbidden(message: String) = ApiException(HttpStatusCode.Forbidden, message)
         fun notFound(message: String) = ApiException(HttpStatusCode.NotFound, message)
+        fun internal(message: String) = ApiException(HttpStatusCode.InternalServerError, message)
     }
 }

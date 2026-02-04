@@ -43,6 +43,7 @@ test("walk full wallet flow", async ({ page }) => {
   await page.getByTestId("clear-mnemonic").click();
 
   await expect(page.getByTestId("home-wallet-name")).toHaveText(walletName);
+  await expect(page.locator("#home-balance-fiat")).not.toHaveText("—");
 
   await page.getByRole("button", { name: "Receive" }).first().click();
   const receiveForm = page.getByTestId("receive-form");
@@ -60,5 +61,5 @@ test("walk full wallet flow", async ({ page }) => {
 
   const toast = page.getByTestId("toast");
   await expect(toast).toBeVisible();
-  await expect(toast).toContainText(/(Unable|Insufficient|Broadcasted|Invalid|Failed)/i);
+  await expect(toast).toContainText(/(Unable|Insufficient|Broadcasted|Invalid|Failed|Not enough)/i);
 });

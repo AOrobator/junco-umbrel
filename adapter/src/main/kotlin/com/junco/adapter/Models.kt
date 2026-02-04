@@ -118,6 +118,13 @@ data class BalanceHistoryResponse(
 )
 
 @Serializable
+data class PriceQuoteResponse(
+    val usd: Double? = null,
+    val updatedAt: Long? = null,
+    val source: String? = null
+)
+
+@Serializable
 data class ElectrumConfigRequest(
     val host: String,
     val port: Int? = null,

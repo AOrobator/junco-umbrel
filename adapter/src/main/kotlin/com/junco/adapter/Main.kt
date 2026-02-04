@@ -59,6 +59,7 @@ fun Application.juncoModule(
     val authManager = AuthManager(authStore)
     val sessions = SessionRegistry()
     val walletService = WalletService(electrum)
+    val priceService = PriceService()
 
     install(DefaultHeaders)
     install(CallLogging)
@@ -189,6 +190,10 @@ fun Application.juncoModule(
                     val sessionData = call.requireSession(authManager, sessions)
                     val name = call.parameters["name"] ?: throw ApiException.badRequest("Missing wallet name")
                     call.respond(walletService.getBalanceHistory(name, sessionData.password))
+                }
+
+                get("/price") {
+                    call.respond(priceService.getUsdQuote())
                 }
 
                 get("/electrum") {
