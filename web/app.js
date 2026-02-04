@@ -245,7 +245,11 @@ async function refreshWalletList() {
   state.wallets = await apiFetch("/api/wallets");
   renderWalletList();
   if (!state.activeWallet && state.wallets.length > 0) {
-    await openWallet(state.wallets[0]);
+    try {
+      await openWallet(state.wallets[0]);
+    } catch (error) {
+      showToast(error.message || "Unable to open wallet");
+    }
   }
 }
 
@@ -257,17 +261,23 @@ async function openWallet(name) {
   state.activeWallet = name;
   state.walletSummary = summary;
   await refreshWalletData(name);
-  render();
 }
 
 async function refreshWalletData(name) {
-  const [transactions, balance] = await Promise.all([
-    apiFetch(`/api/wallets/${encodeURIComponent(name)}/transactions`),
-    apiFetch(`/api/wallets/${encodeURIComponent(name)}/balance`),
-  ]);
-  state.transactions = transactions.transactions || [];
-  state.balanceSats = balance.balanceSats ?? transactions.balanceSats ?? 0;
-  state.balanceHistory = balance.history || [];
+  try {
+    const [transactions, balance] = await Promise.all([
+      apiFetch(`/api/wallets/${encodeURIComponent(name)}/transactions`),
+      apiFetch(`/api/wallets/${encodeURIComponent(name)}/balance`),
+    ]);
+    state.transactions = transactions.transactions || [];
+    state.balanceSats = balance.balanceSats ?? transactions.balanceSats ?? 0;
+    state.balanceHistory = balance.history || [];
+  } catch (error) {
+    state.transactions = [];
+    state.balanceSats = 0;
+    state.balanceHistory = [];
+    showToast(error.message || "Unable to refresh wallet data");
+  }
   render();
 }
 
@@ -326,6 +336,7 @@ async function refreshElectrum() {
 function render() {
   renderWalletList();
   renderHome();
+  renderWalletContext();
   renderTransactions();
   renderSendReview();
   renderReceive();
@@ -398,6 +409,18 @@ function renderHome() {
   renderHomeActions(true);
   renderSparkline(state.balanceHistory);
   renderHomeActivity(state.transactions.slice(0, 3));
+}
+
+function renderWalletContext() {
+  if (!elements.sendContext || !elements.receiveContext) return;
+  if (!state.walletSummary) {
+    elements.sendContext.textContent = "Choose a wallet to start.";
+    elements.receiveContext.textContent = "Choose a wallet to start.";
+    return;
+  }
+  const walletName = state.walletSummary.name || "this wallet";
+  elements.sendContext.textContent = `Sending from ${walletName}.`;
+  elements.receiveContext.textContent = `Receiving into ${walletName}.`;
 }
 
 function renderHomeActions(hasWallet) {
@@ -602,7 +625,7 @@ function renderElectrum() {
     elements.electrumDetail.textContent = status.error || "No server configured yet.";
   }
 
-  if (status?.tipHeight) {
+  if (status?.tipHeight !== null && status?.tipHeight !== undefined) {
     elements.electrumTip.textContent = status.tipHeight.toString();
   } else {
     elements.electrumTip.textContent = "--";

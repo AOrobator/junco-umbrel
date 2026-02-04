@@ -11,6 +11,7 @@ import com.sparrowwallet.drongo.policy.PolicyType
 import com.sparrowwallet.drongo.protocol.ScriptType
 import com.sparrowwallet.drongo.address.Address
 import com.sparrowwallet.drongo.address.InvalidAddressException
+import com.sparrowwallet.drongo.crypto.InvalidPasswordException
 import com.sparrowwallet.drongo.wallet.*
 import com.sparrowwallet.sparrow.io.Storage
 import com.sparrowwallet.sparrow.io.PersistenceType
@@ -29,7 +30,7 @@ class WalletService(private val electrum: ElectrumGateway) {
         if(!dir.exists()) return emptyList()
         return dir.listFiles()
             ?.filter { Storage.isWalletFile(it) }
-            ?.map { Storage(it).getWalletName(null) }
+            ?.mapNotNull { file -> runCatching { Storage(file).getWalletName(null) }.getOrNull() }
             ?.sorted()
             ?: emptyList()
     }
@@ -42,10 +43,17 @@ class WalletService(private val electrum: ElectrumGateway) {
             ?: throw ApiException.notFound("Wallet not found")
 
         val storage = Storage(walletFile)
-        val wallet = if(storage.isEncrypted()) {
-            storage.loadEncryptedWallet(password).wallet
-        } else {
-            storage.loadUnencryptedWallet().wallet
+        val wallet = try {
+            if(storage.isEncrypted()) {
+                storage.loadEncryptedWallet(password).wallet
+            } else {
+                storage.loadUnencryptedWallet().wallet
+            }
+        } catch(e: Exception) {
+            if(e is InvalidPasswordException || e.cause is InvalidPasswordException) {
+                throw ApiException.badRequest("Incorrect wallet password")
+            }
+            throw ApiException.badRequest("Unable to open wallet. Check password or wallet file integrity.")
         }
 
         val handle = WalletHandle(wallet, storage)
@@ -191,7 +199,7 @@ class WalletService(private val electrum: ElectrumGateway) {
         val tx = psbt.extractTransaction()
         val electrumServer = com.sparrowwallet.sparrow.net.ElectrumServer()
         val txid = electrumServer.broadcastTransaction(tx, psbt.fee)
-        refresh(handle)
+        refresh(handle, allowFailure = true)
         return SendResponse(txid.toString(), psbt.fee, walletTx.total)
     }
 
@@ -199,7 +207,7 @@ class WalletService(private val electrum: ElectrumGateway) {
         val handle = openWallet(name, password)
         refresh(handle, allowFailure = true)
         val tipHeight = electrum.currentTipHeight() ?: handle.wallet.storedBlockHeight
-        val transactions = buildTransactions(handle.wallet, tipHeight)
+        val transactions = runCatching { buildTransactions(handle.wallet, tipHeight) }.getOrElse { emptyList() }
         return TransactionsResponse(currentBalance(handle.wallet), transactions)
     }
 
@@ -207,8 +215,8 @@ class WalletService(private val electrum: ElectrumGateway) {
         val handle = openWallet(name, password)
         refresh(handle, allowFailure = true)
         val tipHeight = electrum.currentTipHeight() ?: handle.wallet.storedBlockHeight
-        val transactions = buildTransactions(handle.wallet, tipHeight)
-        val history = buildBalanceHistory(transactions)
+        val transactions = runCatching { buildTransactions(handle.wallet, tipHeight) }.getOrElse { emptyList() }
+        val history = runCatching { buildBalanceHistory(transactions) }.getOrElse { emptyList() }
         return BalanceHistoryResponse(currentBalance(handle.wallet), history)
     }
 

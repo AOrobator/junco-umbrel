@@ -77,7 +77,9 @@ class ElectrumClient : ElectrumGateway {
         connectIfNeeded()
         val electrumServer = ElectrumServer()
         electrumServer.ping()
-        return electrumServer.getServerVersion()
+        val version = electrumServer.getServerVersion()
+        runCatching { fetchTipHeight() }
+        return version
     }
 
     override fun currentTipHeight(): Int? = tipHeight
