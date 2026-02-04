@@ -6,6 +6,7 @@ Always complete the following **after code changes** (not docs/markdown-only cha
 - Launch the app via Docker: `docker compose up --build -d`.
 - Validate the feature with Playwright MCP (CLI automation). Features are not done until this is completed.
   - If Playwright MCP fails to launch with an "Opening in existing browser session" error, remove the MCP Chrome profile cache at `~/Library/Caches/ms-playwright/mcp-chrome` and retry.
+  - If auth must be reset to run tests, delete `./.junco/adapter/auth.json` and rerun Docker + tests.
 
 Data resets (clearing `./.junco` for FTUE testing) are **not** code/content changes:
 - Do **not** auto-run tests after a data reset when FTUE is requested.

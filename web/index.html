@@ -64,6 +64,54 @@
       </div>
     </div>
 
+    <div
+      class="ftue-overlay is-hidden"
+      id="ftue-overlay"
+      role="dialog"
+      aria-modal="true"
+      data-testid="ftue-overlay"
+    >
+      <div class="ftue-card">
+        <div class="ftue-header">
+          <p class="eyebrow">Welcome to Junco</p>
+          <h2>Set up your wallet the Sparrow way</h2>
+          <p class="muted">Connect privately, then create or import a wallet when you are ready.</p>
+        </div>
+        <div class="ftue-steps">
+          <div class="ftue-step is-active" data-ftue-step="1">
+            <h3>1. Choose how to connect</h3>
+            <p class="muted">
+              Sparrow starts by teaching connection modes. Junco keeps it simple: connect to a private Electrum
+              server (recommended) or use offline mode until you are ready.
+            </p>
+          </div>
+          <div class="ftue-step" data-ftue-step="2">
+            <h3>2. Configure your server</h3>
+            <p class="muted">
+              For the best privacy, point Junco to your own Electrum server. You can do this any time in Settings.
+            </p>
+            <button class="btn ghost" id="ftue-configure-electrum" type="button">Configure Electrum</button>
+          </div>
+          <div class="ftue-step" data-ftue-step="3">
+            <h3>3. Create or import a wallet</h3>
+            <p class="muted">
+              Sparrow never auto-creates wallets. Choose how you want to proceed, and we will show the seed phrase
+              before you move on.
+            </p>
+            <div class="ftue-actions">
+              <button class="btn" id="ftue-create-wallet" type="button">Create wallet</button>
+              <button class="btn ghost" id="ftue-import-wallet" type="button">Import wallet</button>
+            </div>
+          </div>
+        </div>
+        <div class="ftue-footer">
+          <button class="btn ghost" id="ftue-back" type="button">Back</button>
+          <button class="btn" id="ftue-next" type="button">Next</button>
+          <button class="btn ghost" id="ftue-skip" type="button">Skip for now</button>
+        </div>
+      </div>
+    </div>
+
     <div class="app">
       <header class="app-header">
         <div class="brand">
@@ -145,6 +193,17 @@
                 <button class="link" data-view-target="activity">View activity</button>
                 <button class="link" data-view-target="settings">Manage wallet</button>
               </div>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="card ftue-callout is-hidden" id="ftue-callout" data-testid="ftue-callout">
+              <p class="card-label">Finish setup</p>
+              <h3>Take control of your wallet</h3>
+              <p class="muted">
+                Configure a private server and create or import a wallet. Sparrow never auto-creates wallets, and neither do we.
+              </p>
+              <button class="btn" id="ftue-finish" type="button">Finish setup</button>
             </div>
           </div>
 
@@ -412,7 +471,7 @@
                   <p class="status-value" id="electrum-tip">--</p>
                 </div>
               </div>
-              <details class="disclosure">
+              <details class="disclosure" id="electrum-disclosure">
                 <summary>Configure server</summary>
                 <form id="electrum-form" class="form" data-testid="electrum-form">
                   <div class="form-row">

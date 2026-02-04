@@ -32,6 +32,11 @@ test("walk full wallet flow", async ({ page }) => {
 
   await expect(authOverlay).toBeHidden({ timeout: 10000 });
 
+  const ftueOverlay = page.getByTestId("ftue-overlay");
+  if (await ftueOverlay.isVisible().catch(() => false)) {
+    await ftueOverlay.getByRole("button", { name: "Skip for now" }).click();
+  }
+
   await page.getByRole("button", { name: "Settings" }).first().click();
   await page.locator("#create-wallet-disclosure summary").click();
   const createForm = page.getByTestId("create-wallet-form");

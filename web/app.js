@@ -6,6 +6,15 @@ const viewAliases = {
   electrum: "settings",
 };
 
+const ftueStorageKey = "junco.ftueDismissed";
+const savedFtueDismissed = (() => {
+  try {
+    return localStorage.getItem(ftueStorageKey) === "1";
+  } catch (_) {
+    return false;
+  }
+})();
+
 const state = {
   view: "home",
   auth: {
@@ -26,6 +35,8 @@ const state = {
   pendingSend: null,
   lastMnemonic: null,
   pendingSeedWallet: null,
+  ftueStep: 1,
+  ftueDismissed: savedFtueDismissed,
   txFilter: "all",
   electrum: {
     config: null,
@@ -86,6 +97,16 @@ const elements = {
   createdMnemonic: document.getElementById("created-mnemonic"),
   copyMnemonic: document.getElementById("copy-mnemonic"),
   clearMnemonic: document.getElementById("clear-mnemonic"),
+  ftueOverlay: document.getElementById("ftue-overlay"),
+  ftueSteps: document.querySelectorAll("[data-ftue-step]"),
+  ftueNext: document.getElementById("ftue-next"),
+  ftueBack: document.getElementById("ftue-back"),
+  ftueSkip: document.getElementById("ftue-skip"),
+  ftueConfigure: document.getElementById("ftue-configure-electrum"),
+  ftueCreate: document.getElementById("ftue-create-wallet"),
+  ftueImport: document.getElementById("ftue-import-wallet"),
+  ftueCallout: document.getElementById("ftue-callout"),
+  ftueFinish: document.getElementById("ftue-finish"),
 };
 
 function normalizeView(view) {
@@ -209,6 +230,52 @@ function showAuthOverlay() {
     elements.authOverlay.classList.add("is-hidden");
     elements.app.classList.remove("is-locked");
   }
+}
+
+function setFtueDismissed(value) {
+  state.ftueDismissed = value;
+  try {
+    if (value) {
+      localStorage.setItem(ftueStorageKey, "1");
+    } else {
+      localStorage.removeItem(ftueStorageKey);
+    }
+  } catch (_) {
+    // ignore storage failures
+  }
+}
+
+function shouldShowFtue() {
+  return state.auth.authenticated && state.wallets.length === 0 && !state.ftueDismissed;
+}
+
+function shouldShowFtueCallout() {
+  return state.auth.authenticated && state.wallets.length === 0 && state.ftueDismissed;
+}
+
+function renderFtue() {
+  if (!elements.ftueOverlay) return;
+  const show = shouldShowFtue();
+  elements.ftueOverlay.classList.toggle("is-hidden", !show);
+  elements.app.classList.toggle("is-locked", show || !elements.authOverlay.classList.contains("is-hidden"));
+  if (!show) return;
+
+  const total = elements.ftueSteps.length;
+  state.ftueStep = Math.min(Math.max(state.ftueStep, 1), total);
+  elements.ftueSteps.forEach((step) => {
+    step.classList.toggle("is-active", step.dataset.ftueStep === String(state.ftueStep));
+  });
+  if (elements.ftueBack) {
+    elements.ftueBack.disabled = state.ftueStep === 1;
+  }
+  if (elements.ftueNext) {
+    elements.ftueNext.classList.toggle("is-hidden", state.ftueStep === total);
+  }
+}
+
+function renderFtueCallout() {
+  if (!elements.ftueCallout) return;
+  elements.ftueCallout.classList.toggle("is-hidden", !shouldShowFtueCallout());
 }
 
 async function loadAuthStatus() {
@@ -376,6 +443,8 @@ function render() {
   renderReceive();
   renderElectrum();
   renderMnemonicPanel();
+  renderFtue();
+  renderFtueCallout();
 }
 
 function renderWalletList() {
@@ -701,13 +770,31 @@ function openSettingsDisclosure(target) {
   if (target === "open") {
     elements.openDisclosure.open = true;
   }
+  if (target === "electrum") {
+    const electrumDisclosure = document.getElementById("electrum-disclosure");
+    if (electrumDisclosure) {
+      electrumDisclosure.open = true;
+    }
+  }
 }
 
 function handleViewButtons() {
   elements.navButtons.forEach((button) => {
     button.addEventListener("click", () => {
       if (!button.dataset.viewTarget) return;
-      setView(button.dataset.viewTarget);
+      const targetView = button.dataset.viewTarget;
+      if (state.pendingSeedWallet && button.dataset.viewTarget !== "settings") {
+        showToast("Confirm your seed phrase before leaving Settings.");
+        return;
+      }
+      if (state.wallets.length === 0 && (targetView === "send" || targetView === "receive")) {
+        setFtueDismissed(false);
+        state.ftueStep = 3;
+        renderFtue();
+        showToast("Finish setup to continue.");
+        return;
+      }
+      setView(targetView);
       const disclosureTarget = button.dataset.disclosureTarget;
       if (disclosureTarget) {
         openSettingsDisclosure(disclosureTarget);
@@ -958,6 +1045,61 @@ function attachHandlers() {
       showToast(error.message || "Unable to lock app");
     }
   });
+
+  if (elements.ftueNext) {
+    elements.ftueNext.addEventListener("click", () => {
+      state.ftueStep += 1;
+      renderFtue();
+    });
+  }
+  if (elements.ftueBack) {
+    elements.ftueBack.addEventListener("click", () => {
+      state.ftueStep -= 1;
+      renderFtue();
+    });
+  }
+  if (elements.ftueSkip) {
+    elements.ftueSkip.addEventListener("click", () => {
+      setFtueDismissed(true);
+      renderFtue();
+      renderFtueCallout();
+    });
+  }
+  if (elements.ftueConfigure) {
+    elements.ftueConfigure.addEventListener("click", () => {
+      setFtueDismissed(true);
+      setView("settings");
+      openSettingsDisclosure("electrum");
+      renderFtue();
+      renderFtueCallout();
+    });
+  }
+  if (elements.ftueCreate) {
+    elements.ftueCreate.addEventListener("click", () => {
+      setFtueDismissed(true);
+      setView("settings");
+      openSettingsDisclosure("create");
+      renderFtue();
+      renderFtueCallout();
+    });
+  }
+  if (elements.ftueImport) {
+    elements.ftueImport.addEventListener("click", () => {
+      setFtueDismissed(true);
+      setView("settings");
+      openSettingsDisclosure("open");
+      renderFtue();
+      renderFtueCallout();
+    });
+  }
+  if (elements.ftueFinish) {
+    elements.ftueFinish.addEventListener("click", () => {
+      setFtueDismissed(false);
+      state.ftueStep = 1;
+      renderFtue();
+      renderFtueCallout();
+    });
+  }
 }
 
 async function init() {
