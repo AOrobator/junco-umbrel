@@ -166,6 +166,33 @@
             <p class="eyebrow">Wallet</p>
             <h1 id="home-wallet-name" data-testid="home-wallet-name">No wallet yet</h1>
             <p class="muted" id="home-wallet-meta">Create or open a wallet to begin.</p>
+            <div class="home-cta is-hidden" id="home-cta" data-testid="home-cta">
+              <button
+                class="btn"
+                type="button"
+                data-view-target="settings"
+                data-disclosure-target="create"
+              >
+                Create wallet
+              </button>
+              <button
+                class="btn ghost"
+                type="button"
+                data-view-target="settings"
+                data-disclosure-target="import"
+              >
+                Import watch-only
+              </button>
+              <button
+                class="link"
+                id="home-cta-open"
+                type="button"
+                data-view-target="settings"
+                data-disclosure-target="open"
+              >
+                Open existing wallet
+              </button>
+            </div>
           </div>
 
           <div class="grid two">
@@ -185,8 +212,16 @@
                 <button class="btn" data-view-target="settings" data-disclosure-target="create">
                   Create wallet
                 </button>
-                <button class="btn ghost" data-view-target="settings" data-disclosure-target="open">
-                  Open wallet
+                <button class="btn ghost" data-view-target="settings" data-disclosure-target="import">
+                  Import watch-only
+                </button>
+                <button
+                  class="btn ghost"
+                  id="home-setup-open"
+                  data-view-target="settings"
+                  data-disclosure-target="open"
+                >
+                  Open existing
                 </button>
               </div>
               <div class="home-links">
@@ -208,15 +243,58 @@
           </div>
 
           <div class="grid two">
-            <div class="card" style="--delay: 0.12s">
-              <p class="card-label">Balance trend</p>
-              <div class="sparkline-wrap">
-                <svg class="sparkline" viewBox="0 0 100 40" preserveAspectRatio="none">
+            <div class="card balance-chart" style="--delay: 0.12s">
+              <div class="chart-head">
+                <div>
+                  <p class="card-label">Balance trend</p>
+                  <h3>Balance history</h3>
+                </div>
+                <div class="chart-metrics">
+                  <div class="chart-metric">
+                    <p class="metric-label">High</p>
+                    <p class="metric-value" id="balance-high">—</p>
+                  </div>
+                  <div class="chart-metric">
+                    <p class="metric-label">Low</p>
+                    <p class="metric-value" id="balance-low">—</p>
+                  </div>
+                </div>
+              </div>
+              <div class="sparkline-wrap deluxe">
+                <svg class="sparkline" viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="balance-area" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="rgba(26, 156, 122, 0.5)"></stop>
+                      <stop offset="100%" stop-color="rgba(26, 156, 122, 0.02)"></stop>
+                    </linearGradient>
+                    <linearGradient id="balance-line" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stop-color="rgba(26, 156, 122, 0.4)"></stop>
+                      <stop offset="45%" stop-color="rgba(26, 156, 122, 0.9)"></stop>
+                      <stop offset="100%" stop-color="rgba(240, 176, 78, 0.9)"></stop>
+                    </linearGradient>
+                    <filter id="balance-glow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="3" result="blur"></feGaussianBlur>
+                      <feMerge>
+                        <feMergeNode in="blur"></feMergeNode>
+                        <feMergeNode in="SourceGraphic"></feMergeNode>
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  <g class="sparkline-grid">
+                    <line x1="0" x2="100" y1="12" y2="12"></line>
+                    <line x1="0" x2="100" y1="28" y2="28"></line>
+                    <line x1="0" x2="100" y1="44" y2="44"></line>
+                  </g>
                   <path id="balance-sparkline-area" class="sparkline-area" d=""></path>
-                  <polyline id="balance-sparkline" class="sparkline-line" points=""></polyline>
+                  <path id="balance-sparkline-glow" class="sparkline-glow" d=""></path>
+                  <path id="balance-sparkline" class="sparkline-line" d=""></path>
+                  <circle id="balance-sparkline-dot" class="sparkline-dot" cx="0" cy="0" r="2.4"></circle>
                 </svg>
               </div>
-              <p class="trend" id="home-balance-trend">No history yet</p>
+              <div class="chart-foot">
+                <p class="trend" id="home-balance-trend">No history yet</p>
+                <p class="muted" id="balance-range">—</p>
+              </div>
             </div>
 
             <div class="card" style="--delay: 0.18s">
@@ -255,17 +333,21 @@
                 </div>
                 <details class="disclosure">
                   <summary>Advanced options</summary>
-                  <div class="form-row">
-                    <label>Fee rate (sat/vB)</label>
-                    <select name="fee">
-                      <option value="8">Economy (8)</option>
-                      <option value="15">Standard (15)</option>
-                      <option value="25">Priority (25)</option>
-                    </select>
-                  </div>
-                  <div class="form-row">
-                    <label>Note</label>
-                    <input name="note" type="text" placeholder="Paying contractor" />
+                  <div class="disclosure-body">
+                    <div class="disclosure-content">
+                      <div class="form-row">
+                        <label>Fee rate (sat/vB)</label>
+                        <select name="fee">
+                          <option value="8">Economy (8)</option>
+                          <option value="15">Standard (15)</option>
+                          <option value="25">Priority (25)</option>
+                        </select>
+                      </div>
+                      <div class="form-row">
+                        <label>Note</label>
+                        <input name="note" type="text" placeholder="Paying contractor" />
+                      </div>
+                    </div>
                   </div>
                 </details>
                 <button class="btn" type="submit">Review send</button>
@@ -301,9 +383,13 @@
                 </div>
                 <details class="disclosure">
                   <summary>Add a label</summary>
-                  <div class="form-row">
-                    <label>Label</label>
-                    <input name="label" type="text" placeholder="Invoice #128" />
+                  <div class="disclosure-body">
+                    <div class="disclosure-content">
+                      <div class="form-row">
+                        <label>Label</label>
+                        <input name="label" type="text" placeholder="Invoice #128" />
+                      </div>
+                    </div>
                   </div>
                 </details>
                 <button class="btn" type="submit">Generate request</button>
@@ -378,84 +464,138 @@
               <div class="wallet-list" id="wallet-list" data-testid="wallet-list"></div>
               <details class="disclosure" id="create-wallet-disclosure">
                 <summary>Create a new wallet</summary>
-                <form id="create-wallet-form" class="form" data-testid="create-wallet-form">
-                  <div class="form-row">
-                    <label>Wallet name</label>
-                    <input name="name" type="text" placeholder="Junco Primary" required />
-                  </div>
-                  <div class="form-row">
-                    <label>Script</label>
-                    <select name="script">
-                      <option value="P2WPKH">P2WPKH (Native SegWit)</option>
-                      <option value="P2TR">P2TR (Taproot)</option>
-                      <option value="P2SH">P2SH (Legacy compatible)</option>
-                    </select>
-                  </div>
-                  <div class="form-row">
-                    <label class="toggle">
-                      <input name="generate" type="checkbox" checked />
-                      <span>Generate a new seed phrase</span>
-                    </label>
-                  </div>
-                  <div class="form-row split">
-                    <div>
-                      <label>Entropy</label>
-                      <select name="entropy">
-                        <option value="128">128-bit (12 words)</option>
-                        <option value="160">160-bit (15 words)</option>
-                        <option value="192">192-bit (18 words)</option>
-                        <option value="224">224-bit (21 words)</option>
-                        <option value="256">256-bit (24 words)</option>
-                      </select>
+                <div class="disclosure-body">
+                  <div class="disclosure-content">
+                    <form id="create-wallet-form" class="form" data-testid="create-wallet-form">
+                      <div class="form-row">
+                        <label>Wallet name</label>
+                        <input name="name" type="text" placeholder="Junco Primary" required />
+                      </div>
+                      <div class="form-row">
+                        <label>Script</label>
+                        <select name="script">
+                          <option value="P2WPKH">P2WPKH (Native SegWit)</option>
+                          <option value="P2TR">P2TR (Taproot)</option>
+                          <option value="P2SH">P2SH (Legacy compatible)</option>
+                        </select>
+                      </div>
+                      <div class="form-row">
+                        <label class="toggle">
+                          <input name="generate" type="checkbox" checked />
+                          <span>Generate a new seed phrase</span>
+                        </label>
+                      </div>
+                      <div class="form-row split">
+                        <div>
+                          <label>Entropy</label>
+                          <select name="entropy">
+                            <option value="128">128-bit (12 words)</option>
+                            <option value="160">160-bit (15 words)</option>
+                            <option value="192">192-bit (18 words)</option>
+                            <option value="224">224-bit (21 words)</option>
+                            <option value="256">256-bit (24 words)</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label>Passphrase (optional)</label>
+                          <input name="passphrase" type="password" placeholder="Extra word" />
+                        </div>
+                      </div>
+                      <div class="form-row">
+                        <label>Mnemonic (if not generating)</label>
+                        <textarea
+                          name="mnemonic"
+                          rows="3"
+                          placeholder="abandon ability able about above absent ..."
+                        ></textarea>
+                      </div>
+                      <button class="btn" type="submit">Create wallet</button>
+                    </form>
+                    <div class="seed-panel is-hidden" id="mnemonic-panel" data-testid="mnemonic-panel">
+                      <p class="card-label">Seed phrase</p>
+                      <p class="mono" id="created-mnemonic" data-testid="created-mnemonic">—</p>
+                      <p class="muted">
+                        Write this down offline. Anyone with this phrase can spend your funds.
+                      </p>
+                      <div class="request-actions">
+                        <button
+                          class="btn ghost"
+                          id="copy-mnemonic"
+                          type="button"
+                          data-testid="copy-mnemonic"
+                        >
+                          Copy seed
+                        </button>
+                        <button
+                          class="btn ghost"
+                          id="clear-mnemonic"
+                          type="button"
+                          data-testid="clear-mnemonic"
+                        >
+                          I wrote it down
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <label>Passphrase (optional)</label>
-                      <input name="passphrase" type="password" placeholder="Extra word" />
-                    </div>
                   </div>
-                  <div class="form-row">
-                    <label>Mnemonic (if not generating)</label>
-                    <textarea
-                      name="mnemonic"
-                      rows="3"
-                      placeholder="abandon ability able about above absent ..."
-                    ></textarea>
-                  </div>
-                  <button class="btn" type="submit">Create wallet</button>
-                </form>
-                <div class="seed-panel is-hidden" id="mnemonic-panel" data-testid="mnemonic-panel">
-                  <p class="card-label">Seed phrase</p>
-                  <p class="mono" id="created-mnemonic" data-testid="created-mnemonic">—</p>
-                  <p class="muted">
-                    Write this down offline. Anyone with this phrase can spend your funds.
-                  </p>
-                  <div class="request-actions">
-                    <button class="btn ghost" id="copy-mnemonic" type="button" data-testid="copy-mnemonic">
-                      Copy seed
-                    </button>
-                    <button class="btn ghost" id="clear-mnemonic" type="button" data-testid="clear-mnemonic">
-                      I wrote it down
-                    </button>
+                </div>
+              </details>
+
+              <details class="disclosure" id="import-wallet-disclosure">
+                <summary>Import watch-only wallet</summary>
+                <div class="disclosure-body">
+                  <div class="disclosure-content">
+                    <form id="import-wallet-form" class="form" data-testid="import-wallet-form">
+                      <div class="form-row">
+                        <label>Wallet name</label>
+                        <input name="name" type="text" placeholder="Junco Watch" required />
+                      </div>
+                      <div class="form-row">
+                        <label>Extended public key (xpub/zpub/vpub)</label>
+                        <input name="xpub" type="text" placeholder="xpub..." required />
+                      </div>
+                      <div class="form-row split">
+                        <div>
+                          <label>Script</label>
+                          <select name="script">
+                            <option value="AUTO">Auto (from key)</option>
+                            <option value="P2WPKH">P2WPKH (Native SegWit)</option>
+                            <option value="P2TR">P2TR (Taproot)</option>
+                            <option value="P2SH">P2SH (Nested SegWit)</option>
+                            <option value="P2PKH">P2PKH (Legacy)</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label>Derivation path (optional)</label>
+                          <input name="derivation" type="text" placeholder="m/84'/0'/0'" />
+                        </div>
+                      </div>
+                      <button class="btn ghost" type="submit">Import watch-only</button>
+                    </form>
                   </div>
                 </div>
               </details>
 
               <details class="disclosure" id="open-wallet-disclosure">
                 <summary>Open existing wallet</summary>
-                <form id="open-wallet-form" class="form" data-testid="open-wallet-form">
-                  <div class="form-row">
-                    <label>Choose a wallet</label>
-                    <select name="wallet" id="open-wallet-select" required data-testid="open-wallet-select">
-                      <option value="">Select a wallet</option>
-                    </select>
+                <div class="disclosure-body">
+                  <div class="disclosure-content">
+                    <form id="open-wallet-form" class="form" data-testid="open-wallet-form">
+                      <div class="form-row">
+                        <label>Choose a wallet</label>
+                        <select name="wallet" id="open-wallet-select" required data-testid="open-wallet-select">
+                          <option value="">Select a wallet</option>
+                        </select>
+                      </div>
+                      <button class="btn ghost" type="submit">Open wallet</button>
+                    </form>
                   </div>
-                  <button class="btn ghost" type="submit">Open wallet</button>
-                </form>
+                </div>
               </details>
             </div>
 
             <div class="card" style="--delay: 0.1s">
-              <h3>Private Electrum</h3>
+              <h3>Electrum servers</h3>
+              <p class="muted">Choose a public server or connect to your private Electrum node.</p>
               <div class="status">
                 <p class="card-label">Connection</p>
                 <p class="status-value" id="electrum-status-detail">Disconnected</p>
@@ -473,30 +613,60 @@
               </div>
               <details class="disclosure" id="electrum-disclosure">
                 <summary>Configure server</summary>
-                <form id="electrum-form" class="form" data-testid="electrum-form">
-                  <div class="form-row">
-                    <label>Host</label>
-                    <input name="host" type="text" placeholder="electrum.yournode.local" required />
+                <div class="disclosure-body">
+                  <div class="disclosure-content">
+                    <form id="electrum-form" class="form" data-testid="electrum-form">
+                      <div class="form-row">
+                        <label>Server preset</label>
+                        <select name="preset" id="electrum-preset" data-testid="electrum-preset">
+                          <option value="mempool-space">mempool.space (public)</option>
+                          <option value="mempool-guide">mempool.guide (public)</option>
+                          <option value="custom">Private server (custom)</option>
+                        </select>
+                      </div>
+                      <div class="form-row">
+                        <label>Host</label>
+                        <input name="host" type="text" placeholder="electrum.yournode.local" required />
+                      </div>
+                      <div class="form-row split">
+                        <div>
+                          <label>Port</label>
+                          <input name="port" type="number" placeholder="50002" required />
+                        </div>
+                        <div>
+                          <label>Use SSL</label>
+                          <select name="ssl">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="form-row split">
+                        <div>
+                          <label>Connection</label>
+                          <select name="connection" id="electrum-connection" data-testid="electrum-connection">
+                            <option value="direct">Direct</option>
+                            <option value="tor">Tor (SOCKS5)</option>
+                          </select>
+                        </div>
+                        <div id="electrum-proxy-row" class="is-hidden">
+                          <label>Tor proxy (SOCKS5)</label>
+                          <input
+                            name="proxy"
+                            type="text"
+                            placeholder="tor:9050"
+                            data-testid="electrum-proxy"
+                          />
+                        </div>
+                      </div>
+                      <div class="form-row">
+                        <label>Certificate path (optional)</label>
+                        <input name="certificate" type="text" placeholder="/data/electrum/cert.pem" />
+                      </div>
+                      <button class="btn" type="submit">Test connection</button>
+                    </form>
                   </div>
-                  <div class="form-row split">
-                    <div>
-                      <label>Port</label>
-                      <input name="port" type="number" placeholder="50002" required />
-                    </div>
-                    <div>
-                      <label>Use SSL</label>
-                      <select name="ssl">
-                        <option value="true">Yes</option>
-                        <option value="false">No</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="form-row">
-                    <label>Certificate path (optional)</label>
-                    <input name="certificate" type="text" placeholder="/data/electrum/cert.pem" />
-                  </div>
-                  <button class="btn" type="submit">Test connection</button>
-                </form>
+                </div>
               </details>
             </div>
           </div>

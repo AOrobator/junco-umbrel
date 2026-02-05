@@ -1,0 +1,79 @@
+- generic [ref=e1]:
+  - generic [ref=e20]:
+    - banner [ref=e21]:
+      - generic [ref=e25]:
+        - paragraph [ref=e26]: Junco
+        - paragraph [ref=e27]: Sparrow for Umbrel
+      - navigation "Primary" [ref=e28]:
+        - button "Home" [active] [ref=e29] [cursor=pointer]
+        - button "Send" [ref=e30] [cursor=pointer]
+        - button "Receive" [ref=e31] [cursor=pointer]
+        - button "Activity" [ref=e32] [cursor=pointer]
+        - button "Settings" [ref=e33] [cursor=pointer]
+        - link "View the Junco repository on GitHub" [ref=e34] [cursor=pointer]:
+          - /url: https://github.com/AOrobator/junco-umbrel
+          - img [ref=e35]
+          - generic [ref=e37]: GitHub
+      - generic [ref=e38]:
+        - generic [ref=e39]: MAINNET
+        - generic [ref=e40]: Connected
+        - button "Lock" [ref=e41] [cursor=pointer]
+    - main [ref=e42]:
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - paragraph [ref=e45]: Wallet
+          - heading "Xpub Watch BIP84" [level=1] [ref=e156]
+          - paragraph [ref=e47]: SINGLE · P2WPKH · Watch-only
+        - generic [ref=e48]:
+          - generic [ref=e49]:
+            - paragraph [ref=e50]: Balance
+            - paragraph [ref=e51]: 0.01625430 BTC
+            - paragraph [ref=e52]: $1,147.05
+          - generic [ref=e53]:
+            - paragraph [ref=e54]: Actions
+            - generic [ref=e55]:
+              - button "Send" [disabled] [ref=e56]
+              - button "Receive" [ref=e57] [cursor=pointer]
+            - generic [ref=e58]:
+              - button "View activity" [ref=e59] [cursor=pointer]
+              - button "Manage wallet" [ref=e60] [cursor=pointer]
+        - generic [ref=e61]:
+          - generic [ref=e62]:
+            - generic [ref=e63]:
+              - generic [ref=e64]:
+                - paragraph [ref=e65]: Balance trend
+                - heading "Balance history" [level=3] [ref=e66]
+              - generic [ref=e67]:
+                - generic [ref=e68]:
+                  - paragraph [ref=e69]: High
+                  - paragraph [ref=e70]: 0.022003 BTC
+                - generic [ref=e71]:
+                  - paragraph [ref=e72]: Low
+                  - paragraph [ref=e73]: 0.001643 BTC
+            - img [ref=e75]
+            - generic [ref=e78]:
+              - paragraph [ref=e79]: Down 0.003746 BTC
+              - paragraph [ref=e80]: Range 0.001643 BTC -> 0.022003 BTC
+          - generic [ref=e81]:
+            - generic [ref=e82]:
+              - generic [ref=e83]:
+                - paragraph [ref=e84]: Recent activity
+                - heading "Latest transactions" [level=3] [ref=e85]
+              - button "View all" [ref=e86] [cursor=pointer]
+            - generic [ref=e87]:
+              - generic [ref=e161]:
+                - generic [ref=e162]:
+                  - paragraph [ref=e163]: Outgoing
+                  - paragraph [ref=e164]: Feb 3, 2026 · 01:23 PM · 208 conf
+                - paragraph [ref=e165]: 0.005749 BTC
+              - generic [ref=e167]:
+                - generic [ref=e168]:
+                  - paragraph [ref=e169]: Incoming
+                  - paragraph [ref=e170]: Feb 3, 2026 · 07:46 AM · 234 conf
+                - paragraph [ref=e171]: 0.020000 BTC
+              - generic [ref=e173]:
+                - generic [ref=e174]:
+                  - paragraph [ref=e175]: Outgoing
+                  - paragraph [ref=e176]: Jan 22, 2026 · 10:28 PM · 1611 conf
+                - paragraph [ref=e177]: 0.002048 BTC
+  - status: Welcome back

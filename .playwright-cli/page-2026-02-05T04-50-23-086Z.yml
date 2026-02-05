@@ -1,0 +1,62 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e7]:
+        - paragraph [ref=e8]: Junco
+        - paragraph [ref=e9]: Sparrow for Umbrel
+      - navigation "Primary" [ref=e10]:
+        - button "Home" [ref=e11] [cursor=pointer]
+        - button "Send" [ref=e12] [cursor=pointer]
+        - button "Receive" [ref=e13] [cursor=pointer]
+        - button "Activity" [ref=e14] [cursor=pointer]
+        - button "Settings" [ref=e15] [cursor=pointer]
+        - link "View the Junco repository on GitHub" [ref=e16] [cursor=pointer]:
+          - /url: https://github.com/AOrobator/junco-umbrel
+          - img [ref=e17]
+          - generic [ref=e19]: GitHub
+      - generic [ref=e20]:
+        - generic [ref=e21]: Mainnet
+        - generic [ref=e22]: Disconnected
+        - button "Lock" [ref=e87] [cursor=pointer]
+    - main [ref=e23]:
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - paragraph [ref=e26]: Wallet
+          - heading "No wallet yet" [level=1] [ref=e27]
+          - paragraph [ref=e28]: Create or open a wallet to begin.
+        - generic [ref=e29]:
+          - generic [ref=e30]:
+            - paragraph [ref=e31]: Balance
+            - paragraph [ref=e32]: 0.0000 BTC
+            - paragraph [ref=e33]: $0.00
+          - generic [ref=e34]:
+            - paragraph [ref=e35]: Actions
+            - generic [ref=e36]:
+              - button "Send" [ref=e37] [cursor=pointer]
+              - button "Receive" [ref=e38] [cursor=pointer]
+            - generic [ref=e39]:
+              - button "View activity" [ref=e40] [cursor=pointer]
+              - button "Manage wallet" [ref=e41] [cursor=pointer]
+        - generic [ref=e42]:
+          - generic [ref=e43]:
+            - generic [ref=e44]:
+              - generic [ref=e45]:
+                - paragraph [ref=e46]: Balance trend
+                - heading "Balance history" [level=3] [ref=e47]
+              - generic [ref=e48]:
+                - generic [ref=e49]:
+                  - paragraph [ref=e50]: High
+                  - paragraph [ref=e51]: —
+                - generic [ref=e52]:
+                  - paragraph [ref=e53]: Low
+                  - paragraph [ref=e54]: —
+            - img [ref=e56]
+            - generic [ref=e59]:
+              - paragraph [ref=e60]: No history yet
+              - paragraph [ref=e61]: —
+          - generic [ref=e63]:
+            - generic [ref=e64]:
+              - paragraph [ref=e65]: Recent activity
+              - heading "Latest transactions" [level=3] [ref=e66]
+            - button "View all" [ref=e67] [cursor=pointer]
+  - status

@@ -1,0 +1,132 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e7]:
+        - paragraph [ref=e8]: Junco
+        - paragraph [ref=e9]: Sparrow for Umbrel
+      - navigation "Primary" [ref=e10]:
+        - button "Home" [ref=e11] [cursor=pointer]
+        - button "Send" [ref=e12] [cursor=pointer]
+        - button "Receive" [ref=e13] [cursor=pointer]
+        - button "Activity" [ref=e14] [cursor=pointer]
+        - button "Settings" [ref=e15] [cursor=pointer]
+        - link "View the Junco repository on GitHub" [ref=e16] [cursor=pointer]:
+          - /url: https://github.com/AOrobator/junco-umbrel
+          - img [ref=e17]
+          - generic [ref=e19]: GitHub
+      - generic [ref=e20]:
+        - generic [ref=e21]: MAINNET
+        - generic [ref=e22]: Connected
+        - button "Lock" [ref=e87] [cursor=pointer]
+    - main [ref=e23]:
+      - generic [ref=e88]:
+        - generic [ref=e89]:
+          - generic [ref=e90]:
+            - paragraph [ref=e91]: Settings
+            - heading "Wallet and connection" [level=2] [ref=e92]
+          - paragraph [ref=e93]: Advanced controls live here so the rest of the app stays focused.
+        - generic [ref=e94]:
+          - generic [ref=e95]:
+            - heading "Wallets" [level=3] [ref=e96]
+            - generic [ref=e97]:
+              - button "Junco Watch Open" [ref=e183]:
+                - generic [ref=e184]: Junco Watch
+                - generic [ref=e185]: Open
+              - button "User Watch Open" [ref=e186]:
+                - generic [ref=e187]: User Watch
+                - generic [ref=e188]: Open
+              - button "UserWatch-1770263567112 Active" [ref=e189]:
+                - generic [ref=e190]: UserWatch-1770263567112
+                - generic [ref=e191]: Active
+            - group [ref=e107]:
+              - generic "Create a new wallet" [ref=e108] [cursor=pointer]
+              - option "P2WPKH (Native SegWit)" [selected]
+              - option "P2TR (Taproot)"
+              - option "P2SH (Legacy compatible)"
+              - option "128-bit (12 words)" [selected]
+              - option "160-bit (15 words)"
+              - option "192-bit (18 words)"
+              - option "224-bit (21 words)"
+              - option "256-bit (24 words)"
+            - group [ref=e109]:
+              - generic "Import watch-only wallet" [active] [ref=e110] [cursor=pointer]
+              - generic [ref=e194]:
+                - generic [ref=e195]:
+                  - generic [ref=e196]: Wallet name
+                  - textbox "Junco Watch" [ref=e197]
+                - generic [ref=e198]:
+                  - generic [ref=e199]: Extended public key (xpub/zpub/vpub)
+                  - textbox "xpub..." [ref=e200]
+                - generic [ref=e201]:
+                  - generic [ref=e202]:
+                    - text: Script
+                    - combobox [ref=e203]:
+                      - option "Auto (from key)" [selected]
+                      - option "P2WPKH (Native SegWit)"
+                      - option "P2TR (Taproot)"
+                      - option "P2SH (Nested SegWit)"
+                      - option "P2PKH (Legacy)"
+                  - generic [ref=e204]:
+                    - text: Derivation path (optional)
+                    - textbox "m/84'/0'/0'" [ref=e205]
+                - button "Import watch-only" [ref=e206] [cursor=pointer]
+            - group [ref=e111]:
+              - generic "Open existing wallet" [ref=e112] [cursor=pointer]
+              - generic [ref=e163]:
+                - generic [ref=e164]:
+                  - generic [ref=e165]: Choose a wallet
+                  - combobox [ref=e166]:
+                    - option "Select a wallet" [selected]
+                    - option "Junco Watch"
+                    - option "User Watch"
+                    - option "UserWatch-1770263567112"
+                - button "Open wallet" [ref=e167] [cursor=pointer]
+          - generic [ref=e113]:
+            - heading "Electrum servers" [level=3] [ref=e114]
+            - paragraph [ref=e115]: Choose a public server or connect to your private Electrum node.
+            - generic [ref=e116]:
+              - paragraph [ref=e117]: Connection
+              - paragraph [ref=e118]: Connected
+              - paragraph [ref=e119]: Server electrs/0.11.0
+            - generic [ref=e120]:
+              - generic [ref=e121]:
+                - paragraph [ref=e122]: Last check
+                - paragraph [ref=e123]: 12:02 AM
+              - generic [ref=e124]:
+                - paragraph [ref=e125]: Tip height
+                - paragraph [ref=e126]: "935071"
+            - group [ref=e127]:
+              - generic "Configure server" [ref=e128] [cursor=pointer]
+              - generic [ref=e131]:
+                - generic [ref=e132]:
+                  - generic [ref=e133]: Server preset
+                  - combobox [ref=e134]:
+                    - option "mempool.space (public)"
+                    - option "mempool.guide (public)"
+                    - option "Private server (custom)" [selected]
+                - generic [ref=e135]:
+                  - generic [ref=e136]: Host
+                  - textbox "electrum.yournode.local" [ref=e137]: 4d4452je7owp5pcthfzgidhq2biyo3p5pxxkagkhpylzdqhtizowu7yd.onion
+                - generic [ref=e138]:
+                  - generic [ref=e139]:
+                    - text: Port
+                    - spinbutton [ref=e140]: "50001"
+                  - generic [ref=e141]:
+                    - text: Use SSL
+                    - combobox [ref=e142]:
+                      - option "Yes"
+                      - option "No" [selected]
+                - generic [ref=e143]:
+                  - generic [ref=e144]:
+                    - text: Connection
+                    - combobox [ref=e145]:
+                      - option "Direct"
+                      - option "Tor (SOCKS5)" [selected]
+                  - generic [ref=e159]:
+                    - text: Tor proxy (SOCKS5)
+                    - textbox "tor:9050" [ref=e160]
+                - generic [ref=e146]:
+                  - generic [ref=e147]: Certificate path (optional)
+                  - textbox "/data/electrum/cert.pem" [ref=e148]
+                - button "Test connection" [ref=e149] [cursor=pointer]
+  - status: Wallet opened

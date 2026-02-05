@@ -1,0 +1,99 @@
+- generic [ref=e1]:
+  - generic [ref=e20]:
+    - banner [ref=e21]:
+      - generic [ref=e25]:
+        - paragraph [ref=e26]: Junco
+        - paragraph [ref=e27]: Sparrow for Umbrel
+      - navigation "Primary" [ref=e28]:
+        - button "Home" [ref=e29] [cursor=pointer]
+        - button "Send" [ref=e30] [cursor=pointer]
+        - button "Receive" [ref=e31] [cursor=pointer]
+        - button "Activity" [ref=e32] [cursor=pointer]
+        - button "Settings" [ref=e33] [cursor=pointer]
+        - link "View the Junco repository on GitHub" [ref=e34] [cursor=pointer]:
+          - /url: https://github.com/AOrobator/junco-umbrel
+          - img [ref=e35]
+          - generic [ref=e37]: GitHub
+      - generic [ref=e38]:
+        - generic [ref=e39]: MAINNET
+        - generic [ref=e40]: Connected
+        - button "Lock" [ref=e41] [cursor=pointer]
+    - main [ref=e42]:
+      - generic [ref=e88]:
+        - generic [ref=e89]:
+          - generic [ref=e90]:
+            - paragraph [ref=e91]: Settings
+            - heading "Wallet and connection" [level=2] [ref=e92]
+          - paragraph [ref=e93]: Advanced controls live here so the rest of the app stays focused.
+        - generic [ref=e94]:
+          - generic [ref=e95]:
+            - heading "Wallets" [level=3] [ref=e96]
+            - generic [ref=e97]:
+              - button "Junco Watch Active" [ref=e138]:
+                - generic [ref=e139]: Junco Watch
+                - generic [ref=e140]: Active
+              - button "User Watch Open" [ref=e141]:
+                - generic [ref=e142]: User Watch
+                - generic [ref=e143]: Open
+              - button "UserWatch-1770263567112 Open" [ref=e144]:
+                - generic [ref=e145]: UserWatch-1770263567112
+                - generic [ref=e146]: Open
+              - button "Xpub Watch Open" [ref=e147]:
+                - generic [ref=e148]: Xpub Watch
+                - generic [ref=e149]: Open
+              - button "Xpub Watch BIP84 Open" [active] [ref=e150]:
+                - generic [ref=e151]: Xpub Watch BIP84
+                - generic [ref=e152]: Open
+              - button "Xpub Watch P2WPKH Open" [ref=e153]:
+                - generic [ref=e154]: Xpub Watch P2WPKH
+                - generic [ref=e155]: Open
+            - group [ref=e116]:
+              - generic "Create a new wallet" [ref=e117] [cursor=pointer]
+              - option "P2WPKH (Native SegWit)" [selected]
+              - option "P2TR (Taproot)"
+              - option "P2SH (Legacy compatible)"
+              - option "128-bit (12 words)" [selected]
+              - option "160-bit (15 words)"
+              - option "192-bit (18 words)"
+              - option "224-bit (21 words)"
+              - option "256-bit (24 words)"
+            - group [ref=e118]:
+              - generic "Import watch-only wallet" [ref=e119] [cursor=pointer]
+              - option "Auto (from key)" [selected]
+              - option "P2WPKH (Native SegWit)"
+              - option "P2TR (Taproot)"
+              - option "P2SH (Nested SegWit)"
+              - option "P2PKH (Legacy)"
+            - group [ref=e120]:
+              - generic "Open existing wallet" [ref=e121] [cursor=pointer]
+              - option "Select a wallet" [selected]
+              - option "Junco Watch"
+              - option "User Watch"
+              - option "UserWatch-1770263567112"
+              - option "Xpub Watch"
+              - option "Xpub Watch BIP84"
+              - option "Xpub Watch P2WPKH"
+          - generic [ref=e122]:
+            - heading "Electrum servers" [level=3] [ref=e123]
+            - paragraph [ref=e124]: Choose a public server or connect to your private Electrum node.
+            - generic [ref=e125]:
+              - paragraph [ref=e126]: Connection
+              - paragraph [ref=e127]: Connected
+              - paragraph [ref=e128]: Server electrs/0.11.0
+            - generic [ref=e129]:
+              - generic [ref=e130]:
+                - paragraph [ref=e131]: Last check
+                - paragraph [ref=e132]: 01:10 AM
+              - generic [ref=e133]:
+                - paragraph [ref=e134]: Tip height
+                - paragraph [ref=e135]: "935080"
+            - group [ref=e136]:
+              - generic "Configure server" [ref=e137] [cursor=pointer]
+              - option "mempool.space (public)"
+              - option "mempool.guide (public)"
+              - option "Private server (custom)" [selected]
+              - option "Yes"
+              - option "No" [selected]
+              - option "Direct"
+              - option "Tor (SOCKS5)" [selected]
+  - status: Welcome back

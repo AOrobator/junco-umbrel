@@ -1,5 +1,7 @@
 package com.junco.adapter
 
+import com.sparrowwallet.drongo.ExtendedKey
+import com.sparrowwallet.drongo.KeyDerivation
 import com.sparrowwallet.drongo.KeyPurpose
 import com.sparrowwallet.drongo.Network
 import com.sparrowwallet.drongo.SecureString
@@ -15,14 +17,17 @@ import com.sparrowwallet.drongo.crypto.InvalidPasswordException
 import com.sparrowwallet.drongo.wallet.*
 import com.sparrowwallet.sparrow.io.Storage
 import com.sparrowwallet.sparrow.io.PersistenceType
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.security.SecureRandom
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeoutException
 
 class WalletService(private val electrum: ElectrumGateway) {
     data class WalletHandle(val wallet: Wallet, val storage: Storage, var lastUpdated: Long? = null)
 
+    private val log = LoggerFactory.getLogger(WalletService::class.java)
     private val wallets = ConcurrentHashMap<String, WalletHandle>()
 
     fun listWallets(): List<String> {
@@ -76,6 +81,30 @@ class WalletService(private val electrum: ElectrumGateway) {
 
         val policyType = runCatching { PolicyType.valueOf(req.policyType.uppercase()) }
             .getOrElse { throw ApiException.badRequest("Unsupported policy type") }
+
+        val xpub = req.xpub?.trim()?.takeIf { it.isNotBlank() }
+        if(xpub != null) {
+            if(policyType != PolicyType.SINGLE) {
+                throw ApiException.badRequest("Watch-only wallets must use a single-signature policy")
+            }
+            val requestedPath = req.derivationPath?.trim()?.takeIf { it.isNotBlank() }
+            log.info(
+                "Creating watch-only wallet name={} policyType={} requestedScriptType={} derivationPath={} xpub={}",
+                name,
+                policyType,
+                req.scriptType,
+                requestedPath,
+                scrubXpub(xpub)
+            )
+            val scriptType = resolveWatchOnlyScriptType(req, xpub)
+            val derivationPath = req.derivationPath?.trim()?.takeIf { it.isNotBlank() } ?: scriptType.defaultDerivationPath
+            if(!KeyDerivation.isValid(derivationPath)) {
+                throw ApiException.badRequest("Invalid derivation path")
+            }
+            log.info("Resolved watch-only wallet name={} scriptType={} derivationPath={}", name, scriptType, derivationPath)
+            return createWatchOnlyWallet(name, policyType, scriptType, xpub, derivationPath)
+        }
+
         val scriptType = runCatching { ScriptType.valueOf(req.scriptType.uppercase()) }
             .getOrElse { throw ApiException.badRequest("Unsupported script type") }
 
@@ -145,6 +174,9 @@ class WalletService(private val electrum: ElectrumGateway) {
     fun sendPayment(name: String, password: SecureString, request: SendRequest): SendResponse {
         val handle = openWallet(name, password)
         val wallet = handle.wallet
+        if(wallet.containsSource(KeystoreSource.SW_WATCH)) {
+            throw ApiException.badRequest("Watch-only wallet cannot send payments")
+        }
 
         if(request.outputs.isEmpty()) {
             throw ApiException.badRequest("At least one output is required")
@@ -222,12 +254,39 @@ class WalletService(private val electrum: ElectrumGateway) {
 
     private fun refresh(handle: WalletHandle, allowFailure: Boolean = false) {
         try {
-            val tip = electrum.refreshWallet(handle.wallet)
+            val wallet = handle.wallet
+            val receiveCount = wallet.getNode(KeyPurpose.RECEIVE).children.size
+            val changeCount = wallet.getNode(KeyPurpose.CHANGE).children.size
+            log.info(
+                "Refreshing wallet name={} watchOnly={} scriptType={} receiveNodes={} changeNodes={}",
+                wallet.name,
+                wallet.containsSource(KeystoreSource.SW_WATCH),
+                wallet.scriptType,
+                receiveCount,
+                changeCount
+            )
+            if(wallet.containsSource(KeystoreSource.SW_WATCH)) {
+                val keystore = wallet.keystores.firstOrNull()
+                val derivation = keystore?.keyDerivation?.derivationPath
+                val xpub = keystore?.extendedPublicKey?.toString()
+                log.info(
+                    "Watch-only details name={} derivationPath={} xpub={}",
+                    wallet.name,
+                    derivation,
+                    xpub?.let { scrubXpub(it) }
+                )
+            }
+            val tip = Timeouts.runElectrum { electrum.refreshWallet(handle.wallet) }
             handle.lastUpdated = tip?.toLong()
             handle.storage.updateWallet(handle.wallet)
         } catch(e: Exception) {
             if(!allowFailure) {
-                throw ApiException.badRequest(e.message ?: "Failed to sync with Electrum server")
+                val message = if(e is TimeoutException) {
+                    "Electrum request timed out"
+                } else {
+                    e.message ?: "Failed to sync with Electrum server"
+                }
+                throw ApiException.badRequest(message)
             }
         }
     }
@@ -257,9 +316,84 @@ class WalletService(private val electrum: ElectrumGateway) {
             network = handle.wallet.network.name,
             policyType = handle.wallet.policyType.name,
             scriptType = handle.wallet.scriptType.name,
+            watchOnly = handle.wallet.containsSource(KeystoreSource.SW_WATCH),
             balanceSats = currentBalance(handle.wallet),
             lastUpdated = handle.lastUpdated
         )
+    }
+
+    private fun resolveWatchOnlyScriptType(req: CreateWalletRequest, xpub: String): ScriptType {
+        val requested = req.scriptType.trim()
+        if(requested.isNotBlank() && !requested.equals("AUTO", ignoreCase = true)) {
+            return runCatching { ScriptType.valueOf(requested.uppercase()) }
+                .getOrElse { throw ApiException.badRequest("Unsupported script type") }
+        }
+        val path = req.derivationPath?.trim()?.takeIf { it.isNotBlank() }
+        val fromPath = path?.let { inferScriptTypeFromDerivationPath(it) }
+        val header = try {
+            ExtendedKey.Header.fromExtendedKey(xpub)
+        } catch(e: Exception) {
+            throw ApiException.badRequest(e.message ?: "Invalid extended public key")
+        }
+        val fromHeader = header.defaultScriptType
+        val resolved = fromPath ?: fromHeader ?: ScriptType.P2WPKH
+        log.info(
+            "Watch-only script inference requested={} derivationPath={} pathScriptType={} headerScriptType={} resolved={}",
+            requested,
+            path,
+            fromPath,
+            fromHeader,
+            resolved
+        )
+        if(fromPath != null && fromHeader != null && fromPath != fromHeader) {
+            log.warn(
+                "Watch-only script mismatch: derivationPath implies {} but xpub header implies {} (using {})",
+                fromPath,
+                fromHeader,
+                resolved
+            )
+        }
+        return resolved
+    }
+
+    private fun createWatchOnlyWallet(
+        name: String,
+        policyType: PolicyType,
+        scriptType: ScriptType,
+        xpub: String,
+        derivationPath: String
+    ): CreateWalletResponse {
+        val extendedKey = try {
+            ExtendedKey.fromDescriptor(xpub)
+        } catch(e: Exception) {
+            throw ApiException.badRequest("Invalid extended public key")
+        }
+        if(!extendedKey.key.isPubKeyOnly) {
+            throw ApiException.badRequest("Extended key must be public")
+        }
+
+        val wallet = Wallet(name)
+        wallet.setPolicyType(policyType)
+        wallet.setScriptType(scriptType)
+        wallet.setNetwork(Network.get())
+
+        val keystore = Keystore("Watch Only")
+        keystore.setSource(KeystoreSource.SW_WATCH)
+        keystore.setWalletModel(WalletModel.SPARROW)
+        keystore.setKeyDerivation(KeyDerivation(KeyDerivation.DEFAULT_WATCH_ONLY_FINGERPRINT, derivationPath))
+        keystore.setExtendedPublicKey(extendedKey)
+        wallet.keystores.clear()
+        wallet.keystores.add(keystore)
+        wallet.setDefaultPolicy(Policy.getPolicy(policyType, scriptType, wallet.keystores, null))
+
+        val storage = Storage(Storage.getWalletFile(name))
+        storage.setEncryptionPubKey(Storage.NO_PASSWORD_KEY)
+        storage.saveWallet(wallet)
+
+        val handle = WalletHandle(wallet, storage)
+        wallets[name] = handle
+        refresh(handle, allowFailure = true)
+        return CreateWalletResponse(toSummary(handle), null)
     }
 
     private fun currentBalance(wallet: Wallet): Long {
@@ -318,5 +452,31 @@ class WalletService(private val electrum: ElectrumGateway) {
         }
 
         return points
+    }
+
+    private fun inferScriptTypeFromDerivationPath(path: String): ScriptType? {
+        val trimmed = path.trim()
+        if(trimmed.isBlank()) return null
+        val normalized = when {
+            trimmed.startsWith("m/", ignoreCase = true) -> trimmed.substring(2)
+            trimmed.startsWith("m", ignoreCase = true) -> trimmed.substring(1)
+            else -> trimmed
+        }
+        val firstSegment = normalized.split("/").firstOrNull()?.trim()?.takeIf { it.isNotBlank() } ?: return null
+        val indexMatch = Regex("""\d+""").find(firstSegment) ?: return null
+        val index = indexMatch.value.toIntOrNull() ?: return null
+        return when(index) {
+            44 -> ScriptType.P2PKH
+            49 -> ScriptType.P2SH
+            84 -> ScriptType.P2WPKH
+            86 -> ScriptType.P2TR
+            else -> null
+        }
+    }
+
+    private fun scrubXpub(xpub: String): String {
+        val trimmed = xpub.trim()
+        if(trimmed.length <= 16) return trimmed
+        return "${trimmed.take(8)}…${trimmed.takeLast(8)}"
     }
 }

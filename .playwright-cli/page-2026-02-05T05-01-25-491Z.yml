@@ -1,0 +1,87 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e7]:
+        - paragraph [ref=e8]: Junco
+        - paragraph [ref=e9]: Sparrow for Umbrel
+      - navigation "Primary" [ref=e10]:
+        - button "Home" [ref=e11] [cursor=pointer]
+        - button "Send" [ref=e12] [cursor=pointer]
+        - button "Receive" [ref=e13] [cursor=pointer]
+        - button "Activity" [ref=e14] [cursor=pointer]
+        - button "Settings" [active] [ref=e15] [cursor=pointer]
+        - link "View the Junco repository on GitHub" [ref=e16] [cursor=pointer]:
+          - /url: https://github.com/AOrobator/junco-umbrel
+          - img [ref=e17]
+          - generic [ref=e19]: GitHub
+      - generic [ref=e20]:
+        - generic [ref=e21]: Mainnet
+        - generic [ref=e22]: Disconnected
+        - button "Lock" [ref=e87] [cursor=pointer]
+    - main [ref=e23]:
+      - generic [ref=e88]:
+        - generic [ref=e89]:
+          - generic [ref=e90]:
+            - paragraph [ref=e91]: Settings
+            - heading "Wallet and connection" [level=2] [ref=e92]
+          - paragraph [ref=e93]: Advanced controls live here so the rest of the app stays focused.
+        - generic [ref=e94]:
+          - generic [ref=e95]:
+            - heading "Wallets" [level=3] [ref=e96]
+            - generic [ref=e97]:
+              - button "Junco Watch Open" [ref=e98]:
+                - generic [ref=e99]: Junco Watch
+                - generic [ref=e100]: Open
+              - button "User Watch Open" [ref=e101]:
+                - generic [ref=e102]: User Watch
+                - generic [ref=e103]: Open
+              - button "UserWatch-1770263567112 Open" [ref=e104]:
+                - generic [ref=e105]: UserWatch-1770263567112
+                - generic [ref=e106]: Open
+            - group [ref=e107]:
+              - generic "Create a new wallet" [ref=e108] [cursor=pointer]
+              - option "P2WPKH (Native SegWit)" [selected]
+              - option "P2TR (Taproot)"
+              - option "P2SH (Legacy compatible)"
+              - option "128-bit (12 words)" [selected]
+              - option "160-bit (15 words)"
+              - option "192-bit (18 words)"
+              - option "224-bit (21 words)"
+              - option "256-bit (24 words)"
+            - group [ref=e109]:
+              - generic "Import watch-only wallet" [ref=e110] [cursor=pointer]
+              - option "Auto (from key)" [selected]
+              - option "P2WPKH (Native SegWit)"
+              - option "P2TR (Taproot)"
+              - option "P2SH (Nested SegWit)"
+              - option "P2PKH (Legacy)"
+            - group [ref=e111]:
+              - generic "Open existing wallet" [ref=e112] [cursor=pointer]
+              - option "Select a wallet" [selected]
+              - option "Junco Watch"
+              - option "User Watch"
+              - option "UserWatch-1770263567112"
+          - generic [ref=e113]:
+            - heading "Electrum servers" [level=3] [ref=e114]
+            - paragraph [ref=e115]: Choose a public server or connect to your private Electrum node.
+            - generic [ref=e116]:
+              - paragraph [ref=e117]: Connection
+              - paragraph [ref=e118]: Disconnected
+              - paragraph [ref=e119]: No server configured yet.
+            - generic [ref=e120]:
+              - generic [ref=e121]:
+                - paragraph [ref=e122]: Last check
+                - paragraph [ref=e123]: "--"
+              - generic [ref=e124]:
+                - paragraph [ref=e125]: Tip height
+                - paragraph [ref=e126]: "--"
+            - group [ref=e127]:
+              - generic "Configure server" [ref=e128] [cursor=pointer]
+              - option "mempool.space (public)" [selected]
+              - option "mempool.guide (public)"
+              - option "Private server (custom)"
+              - option "Yes" [selected]
+              - option "No"
+              - option "Direct" [selected]
+              - option "Tor (SOCKS5)"
+  - status

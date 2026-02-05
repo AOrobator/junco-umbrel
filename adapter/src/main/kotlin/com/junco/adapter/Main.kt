@@ -34,6 +34,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
+import java.util.concurrent.TimeoutException
 
 data class AppConfig(
     val dataDir: Path,
@@ -60,6 +61,7 @@ fun Application.juncoModule(
     val sessions = SessionRegistry()
     val walletService = WalletService(electrum)
     val priceService = PriceService()
+    val log = environment.log
 
     install(DefaultHeaders)
     install(CallLogging)
@@ -82,6 +84,12 @@ fun Application.juncoModule(
             call.application.environment.log.error("Unhandled server error", cause)
             call.respond(HttpStatusCode.InternalServerError, ErrorResponse(cause.message ?: "Server error"))
         }
+    }
+
+    fun scrubXpub(xpub: String?): String? {
+        val value = xpub?.trim()?.takeIf { it.isNotBlank() } ?: return null
+        if(value.length <= 16) return value
+        return "${value.take(8)}…${value.takeLast(8)}"
     }
 
     routing {
@@ -150,12 +158,22 @@ fun Application.juncoModule(
                 post("/wallets/create") {
                     val sessionData = call.requireSession(authManager, sessions)
                     val body = call.receive<CreateWalletRequest>()
+                    log.info(
+                        "API create wallet name={} policyType={} scriptType={} watchOnly={} derivationPath={} xpub={}",
+                        body.name,
+                        body.policyType,
+                        body.scriptType,
+                        body.xpub != null,
+                        body.derivationPath,
+                        scrubXpub(body.xpub)
+                    )
                     call.respond(walletService.createWallet(body, sessionData.password))
                 }
 
                 post("/wallets/open") {
                     val sessionData = call.requireSession(authManager, sessions)
                     val body = call.receive<OpenWalletRequest>()
+                    log.info("API open wallet name={}", body.name)
                     val summary = walletService.getSummary(body.name, sessionData.password)
                     call.respond(summary)
                 }
@@ -163,6 +181,7 @@ fun Application.juncoModule(
                 get("/wallets/{name}") {
                     val sessionData = call.requireSession(authManager, sessions)
                     val name = call.parameters["name"] ?: throw ApiException.badRequest("Missing wallet name")
+                    log.info("API get wallet name={}", name)
                     call.respond(walletService.getSummary(name, sessionData.password))
                 }
 
@@ -170,6 +189,7 @@ fun Application.juncoModule(
                     val sessionData = call.requireSession(authManager, sessions)
                     val name = call.parameters["name"] ?: throw ApiException.badRequest("Missing wallet name")
                     val body = call.receive<ReceiveRequest>()
+                    log.info("API receive wallet name={} labelPresent={}", name, !body.label.isNullOrBlank())
                     call.respond(walletService.receiveAddress(name, sessionData.password, body.label))
                 }
 
@@ -177,36 +197,58 @@ fun Application.juncoModule(
                     val sessionData = call.requireSession(authManager, sessions)
                     val name = call.parameters["name"] ?: throw ApiException.badRequest("Missing wallet name")
                     val body = call.receive<SendRequest>()
+                    log.info(
+                        "API send wallet name={} outputs={} feeRate={} allowRbf={}",
+                        name,
+                        body.outputs.size,
+                        body.feeRate,
+                        body.allowRbf
+                    )
                     call.respond(walletService.sendPayment(name, sessionData.password, body))
                 }
 
                 get("/wallets/{name}/transactions") {
                     val sessionData = call.requireSession(authManager, sessions)
                     val name = call.parameters["name"] ?: throw ApiException.badRequest("Missing wallet name")
+                    log.info("API transactions wallet name={}", name)
                     call.respond(walletService.getTransactions(name, sessionData.password))
                 }
 
                 get("/wallets/{name}/balance") {
                     val sessionData = call.requireSession(authManager, sessions)
                     val name = call.parameters["name"] ?: throw ApiException.badRequest("Missing wallet name")
+                    log.info("API balance wallet name={}", name)
                     call.respond(walletService.getBalanceHistory(name, sessionData.password))
                 }
 
                 get("/price") {
+                    log.info("API price")
                     call.respond(priceService.getUsdQuote())
                 }
 
                 get("/electrum") {
-                    val server = Config.get().electrumServer
+                    val config = Config.get()
+                    val server = config.electrumServer
                     if(server == null) {
-                        call.respond(ElectrumConfigRequest("", null, true, null))
+                        call.respond(
+                            ElectrumConfigRequest(
+                                host = "",
+                                port = null,
+                                ssl = true,
+                                certificatePath = null,
+                                useProxy = config.isUseProxy,
+                                proxyServer = config.proxyServer
+                            )
+                        )
                     } else {
                         call.respond(
                             ElectrumConfigRequest(
                                 host = server.host,
                                 port = server.hostAndPort.port,
                                 ssl = server.protocol == Protocol.SSL,
-                                certificatePath = Config.get().electrumServerCert?.absolutePath
+                                certificatePath = config.electrumServerCert?.absolutePath,
+                                useProxy = config.isUseProxy,
+                                proxyServer = config.proxyServer
                             )
                         )
                     }
@@ -214,19 +256,36 @@ fun Application.juncoModule(
 
                 post("/electrum") {
                     val body = call.receive<ElectrumConfigRequest>()
+                    log.info(
+                        "API electrum configure host={} port={} ssl={} useProxy={} proxyServer={}",
+                        body.host,
+                        body.port,
+                        body.ssl,
+                        body.useProxy,
+                        body.proxyServer
+                    )
                     val protocol = if(body.ssl) Protocol.SSL else Protocol.TCP
                     val port = body.port ?: protocol.defaultPort
                     val server = Server(protocol.toUrlString(body.host, port))
+                    val proxyServer = body.proxyServer?.trim()?.takeIf { it.isNotBlank() }
+                    Config.get().setUseProxy(body.useProxy)
+                    Config.get().setProxyServer(proxyServer)
                     electrum.configure(server, body.certificatePath)
                     call.respond(mapOf("status" to "ok"))
                 }
 
                 get("/electrum/status") {
+                    log.info("API electrum status check")
                     val response = try {
-                        val version = electrum.ping()
+                        val version = Timeouts.runElectrum { electrum.ping() }
                         ElectrumStatusResponse(true, version, electrum.currentTipHeight(), null)
                     } catch(e: Exception) {
-                        ElectrumStatusResponse(false, null, electrum.currentTipHeight(), e.message)
+                        val message = if(e is TimeoutException) {
+                            "Electrum request timed out"
+                        } else {
+                            e.message
+                        }
+                        ElectrumStatusResponse(false, null, electrum.currentTipHeight(), message)
                     }
                     call.respond(response)
                 }
@@ -260,6 +319,7 @@ fun configureEnvironment(config: AppConfig) {
     val sparrowHome = config.dataDir.resolve("sparrow")
     sparrowHome.createDirectories()
     System.setProperty("java.awt.headless", "true")
+    System.setProperty("java.net.preferIPv4Stack", "true")
     System.setProperty("sparrow.home", sparrowHome.toString())
     Network.set(config.network)
 }

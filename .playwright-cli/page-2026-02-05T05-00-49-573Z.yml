@@ -1,0 +1,79 @@
+- generic [active] [ref=e1]:
+  - dialog [ref=e69]:
+    - generic [ref=e70]:
+      - generic [ref=e71]:
+        - generic [ref=e75]:
+          - paragraph [ref=e76]: Junco
+          - paragraph [ref=e77]: Secure wallet access
+        - paragraph [ref=e78]: Your password unlocks your local wallet storage. It never leaves this device.
+      - generic [ref=e79]:
+        - heading "Unlock Junco" [level=2] [ref=e80]
+        - paragraph [ref=e81]: Enter your password to continue.
+        - generic [ref=e82]:
+          - generic [ref=e83]:
+            - generic [ref=e84]: Password
+            - textbox [ref=e85]
+          - button "Unlock" [ref=e86] [cursor=pointer]
+  - generic:
+    - banner:
+      - generic:
+        - generic:
+          - paragraph: Junco
+          - paragraph: Sparrow for Umbrel
+      - navigation "Primary":
+        - button "Home"
+        - button "Send"
+        - button "Receive"
+        - button "Activity"
+        - button "Settings"
+        - link "View the Junco repository on GitHub":
+          - /url: https://github.com/AOrobator/junco-umbrel
+          - img
+          - generic: GitHub
+      - generic:
+        - generic: Mainnet
+        - generic: Disconnected
+    - main:
+      - generic:
+        - generic:
+          - paragraph: Wallet
+          - heading "No wallet yet" [level=1]
+          - paragraph: Create or open a wallet to begin.
+        - generic:
+          - generic:
+            - paragraph: Balance
+            - paragraph: 0.0000 BTC
+            - paragraph: $0.00
+          - generic:
+            - paragraph: Actions
+            - generic:
+              - button "Send"
+              - button "Receive"
+            - generic:
+              - button "View activity"
+              - button "Manage wallet"
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - paragraph: Balance trend
+                - heading "Balance history" [level=3]
+              - generic:
+                - generic:
+                  - paragraph: High
+                  - paragraph: —
+                - generic:
+                  - paragraph: Low
+                  - paragraph: —
+            - generic:
+              - img
+            - generic:
+              - paragraph: No history yet
+              - paragraph: —
+          - generic:
+            - generic:
+              - generic:
+                - paragraph: Recent activity
+                - heading "Latest transactions" [level=3]
+              - button "View all"
+  - status

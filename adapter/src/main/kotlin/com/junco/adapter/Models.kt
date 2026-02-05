@@ -30,6 +30,7 @@ data class WalletSummary(
     val network: String,
     val policyType: String,
     val scriptType: String,
+    val watchOnly: Boolean = false,
     val balanceSats: Long,
     val lastUpdated: Long?
 )
@@ -42,7 +43,9 @@ data class CreateWalletRequest(
     val entropyBits: Int = 128,
     val passphrase: String? = null,
     val policyType: String = "SINGLE",
-    val scriptType: String = "P2WPKH"
+    val scriptType: String = "P2WPKH",
+    val xpub: String? = null,
+    val derivationPath: String? = null
 )
 
 @Serializable
@@ -129,7 +132,9 @@ data class ElectrumConfigRequest(
     val host: String,
     val port: Int? = null,
     val ssl: Boolean = true,
-    val certificatePath: String? = null
+    val certificatePath: String? = null,
+    val useProxy: Boolean = false,
+    val proxyServer: String? = null
 )
 
 @Serializable

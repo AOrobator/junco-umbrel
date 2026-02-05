@@ -1,0 +1,55 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e7]:
+        - paragraph [ref=e8]: Junco
+        - paragraph [ref=e9]: Sparrow for Umbrel
+      - navigation "Primary" [ref=e10]:
+        - button "Home" [ref=e11] [cursor=pointer]
+        - button "Send" [ref=e12] [cursor=pointer]
+        - button "Receive" [ref=e13] [cursor=pointer]
+        - button "Activity" [ref=e14] [cursor=pointer]
+        - button "Settings" [ref=e15] [cursor=pointer]
+        - link "View the Junco repository on GitHub" [ref=e16] [cursor=pointer]:
+          - /url: https://github.com/AOrobator/junco-umbrel
+          - img [ref=e17]
+          - generic [ref=e19]: GitHub
+      - generic [ref=e20]:
+        - generic [ref=e21]: MAINNET
+        - generic [ref=e22]: Connected
+        - button "Lock" [ref=e87] [cursor=pointer]
+    - main [ref=e23]:
+      - generic [ref=e209]:
+        - generic [ref=e210]:
+          - generic [ref=e211]:
+            - paragraph [ref=e212]: Receive
+            - heading "Request a payment" [level=2] [ref=e213]
+          - paragraph [ref=e214]: Receiving into Xpub Watch.
+        - generic [ref=e215]:
+          - generic [ref=e216]:
+            - heading "New request" [level=3] [ref=e217]
+            - generic [ref=e218]:
+              - generic [ref=e219]:
+                - generic [ref=e220]: Amount (BTC)
+                - spinbutton [ref=e221]
+              - group [ref=e222]:
+                - generic "Add a label" [ref=e223] [cursor=pointer]
+              - button "Generate request" [ref=e224] [cursor=pointer]
+            - generic [ref=e225]:
+              - paragraph [ref=e226]: Current address
+              - paragraph [ref=e227]: —
+              - generic [ref=e228]:
+                - button "Copy address" [ref=e229] [cursor=pointer]
+                - button "New address" [ref=e230] [cursor=pointer]
+              - button "Mark as received" [ref=e231] [cursor=pointer]
+          - generic [ref=e232]:
+            - heading "Share" [level=3] [ref=e233]
+            - generic [ref=e235]:
+              - generic [ref=e236]:
+                - paragraph [ref=e237]: Request total
+                - paragraph [ref=e238]: 0.0000 BTC
+              - generic [ref=e239]:
+                - paragraph [ref=e240]: Status
+                - paragraph [ref=e241]: Waiting
+            - paragraph [ref=e242]: Share via QR, copy the URI, or keep waiting for the payment.
+  - status: Watch-only wallet imported.

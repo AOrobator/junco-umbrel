@@ -1,0 +1,83 @@
+- generic [active] [ref=e1]:
+  - dialog [ref=e20]:
+    - generic [ref=e21]:
+      - generic [ref=e22]:
+        - paragraph [ref=e23]: Welcome to Junco
+        - heading "Set up your wallet the Sparrow way" [level=2] [ref=e24]
+        - paragraph [ref=e25]: Connect privately, then create or import a wallet when you are ready.
+      - generic [ref=e27]:
+        - heading "1. Choose how to connect" [level=3] [ref=e28]
+        - paragraph [ref=e29]: "Sparrow starts by teaching connection modes. Junco keeps it simple: connect to a private Electrum server (recommended) or use offline mode until you are ready."
+      - generic [ref=e30]:
+        - button "Back" [disabled] [ref=e31]
+        - button "Next" [ref=e32] [cursor=pointer]
+        - button "Skip for now" [ref=e33] [cursor=pointer]
+  - generic:
+    - banner:
+      - generic:
+        - generic:
+          - paragraph: Junco
+          - paragraph: Sparrow for Umbrel
+      - navigation "Primary":
+        - button "Home"
+        - button "Send"
+        - button "Receive"
+        - button "Activity"
+        - button "Settings"
+        - link "View the Junco repository on GitHub":
+          - /url: https://github.com/AOrobator/junco-umbrel
+          - img
+          - generic: GitHub
+      - generic:
+        - generic: —
+        - generic: Disconnected
+        - button "Lock"
+    - main:
+      - generic:
+        - generic:
+          - paragraph: Wallet
+          - heading "No wallet yet" [level=1]
+          - paragraph: Create a wallet or import a watch-only wallet to get started.
+          - generic:
+            - button "Create wallet"
+            - button "Import watch-only"
+        - generic:
+          - generic:
+            - paragraph: Balance
+            - paragraph: 0.00000000 BTC
+            - paragraph: —
+          - generic:
+            - paragraph: Actions
+            - generic:
+              - button "Create wallet"
+              - button "Import watch-only"
+            - generic:
+              - button "View activity"
+              - button "Manage wallet"
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - paragraph: Balance trend
+                - heading "Balance history" [level=3]
+              - generic:
+                - generic:
+                  - paragraph: High
+                  - paragraph: —
+                - generic:
+                  - paragraph: Low
+                  - paragraph: —
+            - generic:
+              - img
+            - generic:
+              - paragraph: No history yet
+              - paragraph: —
+          - generic:
+            - generic:
+              - generic:
+                - paragraph: Recent activity
+                - heading "Latest transactions" [level=3]
+              - button "View all"
+            - generic:
+              - paragraph: No activity yet.
+  - status: Welcome back

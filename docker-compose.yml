@@ -48,3 +48,8 @@ services:
           create_host_path: true
     depends_on:
       - server
+      - tor
+
+  tor:
+    image: dperson/torproxy:latest
+    restart: unless-stopped

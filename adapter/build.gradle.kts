@@ -49,6 +49,7 @@ dependencies {
     implementation("com.sparrowwallet:lark:2.3.2")
     implementation("com.google.guava:guava:33.5.0-jre")
     implementation("com.google.code.gson:gson:2.9.1")
+    implementation("com.github.arteam:simple-json-rpc-core:1.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.7.1")
 

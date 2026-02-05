@@ -42,6 +42,8 @@ const state = {
     config: null,
     status: null,
     lastChecked: null,
+    preset: null,
+    customDraft: null,
   },
 };
 
@@ -51,6 +53,7 @@ const elements = {
   navButtons: document.querySelectorAll("[data-view-target]"),
   walletList: document.getElementById("wallet-list"),
   createWalletForm: document.getElementById("create-wallet-form"),
+  importWalletForm: document.getElementById("import-wallet-form"),
   openWalletForm: document.getElementById("open-wallet-form"),
   openWalletSelect: document.getElementById("open-wallet-select"),
   receiveForm: document.getElementById("receive-form"),
@@ -59,13 +62,21 @@ const elements = {
   transactionsList: document.getElementById("transactions-list"),
   toast: document.getElementById("toast"),
   createDisclosure: document.getElementById("create-wallet-disclosure"),
+  importDisclosure: document.getElementById("import-wallet-disclosure"),
   openDisclosure: document.getElementById("open-wallet-disclosure"),
   homeActivityList: document.getElementById("home-activity-list"),
   sparklineLine: document.getElementById("balance-sparkline"),
   sparklineArea: document.getElementById("balance-sparkline-area"),
+  sparklineGlow: document.getElementById("balance-sparkline-glow"),
+  sparklineDot: document.getElementById("balance-sparkline-dot"),
   homeTrend: document.getElementById("home-balance-trend"),
+  balanceHigh: document.getElementById("balance-high"),
+  balanceLow: document.getElementById("balance-low"),
+  balanceRange: document.getElementById("balance-range"),
   homeWalletName: document.getElementById("home-wallet-name"),
   homeWalletMeta: document.getElementById("home-wallet-meta"),
+  homeCta: document.getElementById("home-cta"),
+  homeCtaOpen: document.getElementById("home-cta-open"),
   homeBalance: document.getElementById("home-balance"),
   homeBalanceFiat: document.getElementById("home-balance-fiat"),
   networkPill: document.getElementById("network-pill"),
@@ -83,6 +94,14 @@ const elements = {
   copyAddress: document.getElementById("copy-address"),
   newAddress: document.getElementById("new-address"),
   markReceived: document.getElementById("mark-received"),
+  electrumPreset: document.getElementById("electrum-preset"),
+  electrumHost: document.querySelector('#electrum-form input[name="host"]'),
+  electrumPort: document.querySelector('#electrum-form input[name="port"]'),
+  electrumSsl: document.querySelector('#electrum-form select[name="ssl"]'),
+  electrumCertificate: document.querySelector('#electrum-form input[name="certificate"]'),
+  electrumConnection: document.getElementById("electrum-connection"),
+  electrumProxy: document.querySelector('#electrum-form input[name="proxy"]'),
+  electrumProxyRow: document.getElementById("electrum-proxy-row"),
   electrumStatusDetail: document.getElementById("electrum-status-detail"),
   electrumDetail: document.getElementById("electrum-detail"),
   electrumCheck: document.getElementById("electrum-check"),
@@ -172,6 +191,155 @@ function formatTime(timestampSec) {
   return date.toLocaleTimeString(undefined, {
     hour: "2-digit",
     minute: "2-digit",
+  });
+}
+
+const electrumPresets = [
+  {
+    id: "mempool-space",
+    label: "mempool.space (public)",
+    host: "electrum.mempool.space",
+    port: 50002,
+    ssl: true,
+  },
+  {
+    id: "mempool-guide",
+    label: "mempool.guide (public)",
+    host: "electrum.mempool.guide",
+    port: 50002,
+    ssl: true,
+  },
+];
+
+const defaultElectrumPresetId = electrumPresets[0]?.id || "custom";
+const electrumPresetMap = electrumPresets.reduce((acc, preset) => {
+  acc[preset.id] = preset;
+  return acc;
+}, {});
+
+const torProxyDefault = "tor:9050";
+
+function normalizeHost(host) {
+  return (host || "").trim().toLowerCase();
+}
+
+function isOnionHost(host) {
+  return normalizeHost(host).endsWith(".onion");
+}
+
+function resolveElectrumConnection(values) {
+  if (values?.useProxy === true || values?.useProxy === "true") return "tor";
+  if (isOnionHost(values?.host)) return "tor";
+  return "direct";
+}
+
+function updateElectrumProxyVisibility(connection) {
+  const useTor = connection === "tor";
+  if (elements.electrumProxyRow) {
+    elements.electrumProxyRow.classList.toggle("is-hidden", !useTor);
+  }
+  if (useTor && elements.electrumProxy && !elements.electrumProxy.value.trim()) {
+    elements.electrumProxy.value = torProxyDefault;
+  }
+}
+
+function getPresetForConfig(config) {
+  if (!config?.host || !config.host.trim()) return defaultElectrumPresetId;
+  const host = normalizeHost(config.host);
+  const port = config.port ?? null;
+  const ssl = Boolean(config.ssl);
+  const match = electrumPresets.find(
+    (preset) =>
+      normalizeHost(preset.host) === host &&
+      (preset.port ?? null) === port &&
+      Boolean(preset.ssl) === ssl
+  );
+  return match ? match.id : "custom";
+}
+
+function getElectrumFormValues() {
+  const connection =
+    elements.electrumConnection?.value ||
+    resolveElectrumConnection({ host: elements.electrumHost?.value, useProxy: false });
+  const useProxy = connection === "tor";
+  return {
+    host: elements.electrumHost?.value?.trim() || "",
+    port: elements.electrumPort?.value?.trim() || "",
+    ssl: elements.electrumSsl?.value || "true",
+    certificatePath: elements.electrumCertificate?.value?.trim() || "",
+    useProxy,
+    proxyServer: elements.electrumProxy?.value?.trim() || "",
+  };
+}
+
+function setElectrumFormValues(values) {
+  if (elements.electrumHost) {
+    elements.electrumHost.value = values.host ?? "";
+  }
+  if (elements.electrumPort) {
+    elements.electrumPort.value = values.port ?? "";
+  }
+  if (elements.electrumSsl) {
+    elements.electrumSsl.value = values.ssl === false || values.ssl === "false" ? "false" : "true";
+  }
+  if (elements.electrumCertificate) {
+    elements.electrumCertificate.value = values.certificatePath ?? "";
+  }
+  const connection = resolveElectrumConnection(values);
+  if (elements.electrumConnection) {
+    elements.electrumConnection.value = connection;
+  }
+  if (elements.electrumProxy) {
+    elements.electrumProxy.value = values.proxyServer ?? "";
+  }
+  updateElectrumProxyVisibility(connection);
+}
+
+function applyElectrumPreset(presetId, overrides = {}) {
+  if (presetId === "custom") {
+    const draft = state.electrum.customDraft || {};
+    setElectrumFormValues({
+      host: draft.host ?? "",
+      port: draft.port ?? "",
+      ssl: draft.ssl ?? "true",
+      certificatePath: draft.certificatePath ?? "",
+      useProxy: draft.useProxy ?? false,
+      proxyServer: draft.proxyServer ?? "",
+    });
+    return;
+  }
+  const preset = electrumPresetMap[presetId];
+  if (!preset) return;
+  setElectrumFormValues({
+    host: preset.host,
+    port: preset.port?.toString() ?? "",
+    ssl: preset.ssl ? "true" : "false",
+    certificatePath: "",
+    useProxy: overrides.useProxy ?? false,
+    proxyServer: overrides.proxyServer ?? "",
+  });
+}
+
+function syncElectrumForm() {
+  if (!elements.electrumForm || !elements.electrumPreset) return;
+  const config = state.electrum.config;
+  if (!config) return;
+  const presetId = getPresetForConfig(config);
+  state.electrum.preset = presetId;
+  elements.electrumPreset.value = presetId;
+  if (presetId === "custom") {
+    state.electrum.customDraft = {
+      host: config.host || "",
+      port: config.port?.toString() ?? "",
+      ssl: config.ssl ? "true" : "false",
+      certificatePath: config.certificatePath || "",
+      useProxy: Boolean(config.useProxy),
+      proxyServer: config.proxyServer || "",
+    };
+  }
+  applyElectrumPreset(presetId, {
+    useProxy: Boolean(config.useProxy),
+    proxyServer: config.proxyServer || "",
   });
 }
 
@@ -326,12 +494,25 @@ async function bootstrap() {
 async function refreshWalletList() {
   state.wallets = await apiFetch("/api/wallets");
   renderWalletList();
+  if (state.activeWallet && !state.wallets.includes(state.activeWallet)) {
+    state.activeWallet = null;
+    state.walletSummary = null;
+  }
   if (!state.activeWallet && state.wallets.length > 0) {
     try {
       await openWallet(state.wallets[0]);
     } catch (error) {
       showToast(error.message || "Unable to open wallet");
     }
+    return;
+  }
+  if (state.wallets.length === 0) {
+    state.activeWallet = null;
+    state.walletSummary = null;
+    state.transactions = [];
+    state.balanceSats = 0;
+    state.balanceHistory = [];
+    render();
   }
 }
 
@@ -419,18 +600,24 @@ async function sendPayment() {
 }
 
 async function refreshElectrum() {
+  let config = null;
+  let status = null;
   try {
-    const [config, status] = await Promise.all([
-      apiFetch("/api/electrum"),
-      apiFetch("/api/electrum/status"),
-    ]);
-    state.electrum.config = config;
-    state.electrum.status = status;
-    state.electrum.lastChecked = Date.now();
+    config = await apiFetch("/api/electrum");
   } catch (error) {
-    state.electrum.status = { connected: false, error: error.message };
-    state.electrum.lastChecked = Date.now();
+    showToast(error.message || "Unable to load Electrum settings");
   }
+  try {
+    status = await apiFetch("/api/electrum/status");
+  } catch (error) {
+    status = { connected: false, error: error.message };
+  }
+  if (config) {
+    state.electrum.config = config;
+    syncElectrumForm();
+  }
+  state.electrum.status = status;
+  state.electrum.lastChecked = Date.now();
   renderElectrum();
 }
 
@@ -494,26 +681,36 @@ function renderWalletList() {
 function renderHome() {
   if (!state.walletSummary) {
     elements.homeWalletName.textContent = "No wallet yet";
-    elements.homeWalletMeta.textContent = "Create or open a wallet to begin.";
+    elements.homeWalletMeta.textContent =
+      "Create a wallet or import a watch-only wallet to get started.";
     elements.homeBalance.textContent = "0.00000000 BTC";
     elements.homeBalanceFiat.textContent = "—";
     elements.networkPill.textContent = "—";
     renderHomeActions(false);
+    if (elements.homeCta) {
+      elements.homeCta.classList.remove("is-hidden");
+    }
     renderSparkline([]);
     renderHomeActivity([]);
+    applyWalletRestrictions();
     return;
   }
 
   elements.homeWalletName.textContent = state.walletSummary.name;
-  elements.homeWalletMeta.textContent = `${state.walletSummary.policyType} · ${state.walletSummary.scriptType}`;
+  const watchOnlyTag = state.walletSummary.watchOnly ? " · Watch-only" : "";
+  elements.homeWalletMeta.textContent = `${state.walletSummary.policyType} · ${state.walletSummary.scriptType}${watchOnlyTag}`;
   elements.homeBalance.textContent = formatBtcFromSats(state.balanceSats, 8);
   const fiatBalance = formatUsdFromSats(state.balanceSats, state.priceUsd);
   elements.homeBalanceFiat.textContent =
     fiatBalance === "—" ? formatSats(state.balanceSats) : fiatBalance;
   elements.networkPill.textContent = state.walletSummary.network || "Mainnet";
   renderHomeActions(true);
+  if (elements.homeCta) {
+    elements.homeCta.classList.add("is-hidden");
+  }
   renderSparkline(state.balanceHistory);
   renderHomeActivity(state.transactions.slice(0, 3));
+  applyWalletRestrictions();
 }
 
 function renderWalletContext() {
@@ -524,13 +721,25 @@ function renderWalletContext() {
     return;
   }
   const walletName = state.walletSummary.name || "this wallet";
-  elements.sendContext.textContent = `Sending from ${walletName}.`;
+  if (state.walletSummary.watchOnly) {
+    elements.sendContext.textContent = "Watch-only wallet. Sending is disabled.";
+  } else {
+    elements.sendContext.textContent = `Sending from ${walletName}.`;
+  }
   elements.receiveContext.textContent = `Receiving into ${walletName}.`;
 }
 
 function renderHomeActions(hasWallet) {
   const primary = document.getElementById("home-actions");
   const setup = document.getElementById("home-setup-actions");
+  const openButton = document.getElementById("home-setup-open");
+  const hasWallets = state.wallets.length > 0;
+  if (openButton) {
+    openButton.classList.toggle("is-hidden", !hasWallets);
+  }
+  if (elements.homeCtaOpen) {
+    elements.homeCtaOpen.classList.toggle("is-hidden", !hasWallets);
+  }
   if (hasWallet) {
     primary.classList.remove("is-hidden");
     setup.classList.add("is-hidden");
@@ -540,12 +749,59 @@ function renderHomeActions(hasWallet) {
   }
 }
 
+function applyWalletRestrictions() {
+  const watchOnly = Boolean(state.walletSummary?.watchOnly);
+  const homeSendButton = document.querySelector("#home-actions [data-view-target='send']");
+  if (homeSendButton) {
+    homeSendButton.disabled = watchOnly;
+    homeSendButton.classList.toggle("is-disabled", watchOnly);
+  }
+  if (elements.sendForm) {
+    const controls = elements.sendForm.querySelectorAll("input, select, textarea, button");
+    controls.forEach((control) => {
+      control.disabled = watchOnly;
+    });
+    elements.sendForm.classList.toggle("is-disabled", watchOnly);
+  }
+  if (elements.confirmSend) {
+    elements.confirmSend.disabled = watchOnly;
+    elements.confirmSend.classList.toggle("is-disabled", watchOnly);
+  }
+}
+
+function buildSmoothPath(points) {
+  if (!points || points.length === 0) return "";
+  if (points.length === 1) {
+    return `M ${points[0].x.toFixed(2)},${points[0].y.toFixed(2)}`;
+  }
+  let d = `M ${points[0].x.toFixed(2)},${points[0].y.toFixed(2)}`;
+  for (let i = 1; i < points.length - 1; i += 1) {
+    const current = points[i];
+    const next = points[i + 1];
+    const xc = (current.x + next.x) / 2;
+    const yc = (current.y + next.y) / 2;
+    d += ` Q ${current.x.toFixed(2)},${current.y.toFixed(2)} ${xc.toFixed(2)},${yc.toFixed(2)}`;
+  }
+  const last = points[points.length - 1];
+  d += ` T ${last.x.toFixed(2)},${last.y.toFixed(2)}`;
+  return d;
+}
+
 function renderSparkline(history) {
   if (!history || history.length < 2) {
-    elements.sparklineLine.setAttribute("points", "");
+    elements.sparklineLine.setAttribute("d", "");
     elements.sparklineArea.setAttribute("d", "");
+    if (elements.sparklineGlow) {
+      elements.sparklineGlow.setAttribute("d", "");
+    }
+    if (elements.sparklineDot) {
+      elements.sparklineDot.setAttribute("r", "0");
+    }
     elements.homeTrend.textContent = "No history yet";
     elements.homeTrend.classList.remove("negative");
+    if (elements.balanceHigh) elements.balanceHigh.textContent = "—";
+    if (elements.balanceLow) elements.balanceLow.textContent = "—";
+    if (elements.balanceRange) elements.balanceRange.textContent = "—";
     return;
   }
   const points = history.map((point, index) => ({
@@ -556,17 +812,35 @@ function renderSparkline(history) {
   const maxY = Math.max(...points.map((p) => p.y));
   const range = maxY - minY || 1;
   const width = 100;
-  const height = 40;
+  const height = 60;
+  const padding = 6;
 
-  const polyPoints = points.map((p) => {
+  const scaledPoints = points.map((p) => {
     const x = (p.x / (points.length - 1)) * width;
-    const y = height - ((p.y - minY) / range) * height;
-    return `${x.toFixed(2)},${y.toFixed(2)}`;
+    const y = height - padding - ((p.y - minY) / range) * (height - padding * 2);
+    return { x, y };
   });
 
-  elements.sparklineLine.setAttribute("points", polyPoints.join(" "));
-  const areaPath = `M0,${height} L${polyPoints.join(" ")} L${width},${height} Z`;
+  const linePath = buildSmoothPath(scaledPoints);
+  const baseY = height - padding;
+  const areaPath = `${linePath} L ${width.toFixed(2)},${baseY.toFixed(2)} L 0,${baseY.toFixed(2)} Z`;
+  elements.sparklineLine.setAttribute("d", linePath);
   elements.sparklineArea.setAttribute("d", areaPath);
+  if (elements.sparklineGlow) {
+    elements.sparklineGlow.setAttribute("d", linePath);
+  }
+  if (elements.sparklineDot) {
+    const lastPoint = scaledPoints[scaledPoints.length - 1];
+    elements.sparklineDot.setAttribute("cx", lastPoint.x.toFixed(2));
+    elements.sparklineDot.setAttribute("cy", lastPoint.y.toFixed(2));
+    elements.sparklineDot.setAttribute("r", "2.4");
+  }
+
+  if (elements.balanceHigh) elements.balanceHigh.textContent = formatBtcFromSats(maxY, 6);
+  if (elements.balanceLow) elements.balanceLow.textContent = formatBtcFromSats(minY, 6);
+  if (elements.balanceRange) {
+    elements.balanceRange.textContent = `Range ${formatBtcFromSats(minY, 6)} -> ${formatBtcFromSats(maxY, 6)}`;
+  }
 
   const first = history[0].balanceSats;
   const last = history[history.length - 1].balanceSats;
@@ -767,6 +1041,11 @@ function openSettingsDisclosure(target) {
   if (target === "create") {
     elements.createDisclosure.open = true;
   }
+  if (target === "import") {
+    if (elements.importDisclosure) {
+      elements.importDisclosure.open = true;
+    }
+  }
   if (target === "open") {
     elements.openDisclosure.open = true;
   }
@@ -865,6 +1144,41 @@ function attachHandlers() {
     }
   });
 
+  if (elements.importWalletForm) {
+    elements.importWalletForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      try {
+        const data = new FormData(elements.importWalletForm);
+        const name = data.get("name").trim();
+        const xpub = data.get("xpub").trim();
+        const scriptType = data.get("script");
+        const derivationPath = data.get("derivation").trim();
+
+        await apiFetch("/api/wallets/create", {
+          method: "POST",
+          body: JSON.stringify({
+            name,
+            policyType: "SINGLE",
+            scriptType,
+            xpub,
+            derivationPath: derivationPath || null,
+          }),
+        });
+
+        state.lastMnemonic = null;
+        state.pendingSeedWallet = null;
+        renderMnemonicPanel();
+        elements.importWalletForm.reset();
+        await refreshWalletList();
+        await openWallet(name);
+        setView("home");
+        showToast("Watch-only wallet imported.");
+      } catch (error) {
+        showToast(error.message || "Unable to import wallet");
+      }
+    });
+  }
+
   elements.openWalletForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     try {
@@ -935,6 +1249,10 @@ function attachHandlers() {
       showToast("Select a wallet first");
       return;
     }
+    if (state.walletSummary?.watchOnly) {
+      showToast("Watch-only wallet cannot send.");
+      return;
+    }
     const data = new FormData(elements.sendForm);
     const address = data.get("address").trim();
     const amountBtc = parseFloat(data.get("amount"));
@@ -987,6 +1305,53 @@ function attachHandlers() {
     });
   }
 
+  if (elements.electrumPreset) {
+    elements.electrumPreset.addEventListener("change", () => {
+      const nextPreset = elements.electrumPreset.value;
+      if (state.electrum.preset === "custom") {
+        state.electrum.customDraft = getElectrumFormValues();
+      }
+      state.electrum.preset = nextPreset;
+      if (nextPreset === "custom") {
+        if (!state.electrum.customDraft) {
+          state.electrum.customDraft = {
+            host: "",
+            port: "",
+            ssl: "true",
+            certificatePath: "",
+            useProxy: false,
+            proxyServer: "",
+          };
+        }
+      }
+      applyElectrumPreset(nextPreset);
+    });
+  }
+
+  if (elements.electrumForm) {
+    elements.electrumForm.addEventListener("input", (event) => {
+      if (event?.target?.name === "host") {
+        const hostValue = event.target.value || "";
+        if (isOnionHost(hostValue) && elements.electrumConnection?.value !== "tor") {
+          elements.electrumConnection.value = "tor";
+          updateElectrumProxyVisibility("tor");
+        }
+      }
+      if (elements.electrumPreset?.value === "custom") {
+        state.electrum.customDraft = getElectrumFormValues();
+      }
+    });
+  }
+
+  if (elements.electrumConnection) {
+    elements.electrumConnection.addEventListener("change", () => {
+      updateElectrumProxyVisibility(elements.electrumConnection.value);
+      if (elements.electrumPreset?.value === "custom") {
+        state.electrum.customDraft = getElectrumFormValues();
+      }
+    });
+  }
+
   elements.electrumForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     try {
@@ -995,6 +1360,13 @@ function attachHandlers() {
       const port = parseInt(data.get("port"), 10) || null;
       const ssl = data.get("ssl") === "true";
       const certificatePath = data.get("certificate").trim();
+      const connection = data.get("connection") || "direct";
+      const useProxy = connection === "tor";
+      const proxyServer = (data.get("proxy") || "").trim();
+      if (useProxy && !proxyServer) {
+        showToast("Tor proxy is required");
+        return;
+      }
       await apiFetch("/api/electrum", {
         method: "POST",
         body: JSON.stringify({
@@ -1002,6 +1374,8 @@ function attachHandlers() {
           port,
           ssl,
           certificatePath: certificatePath || null,
+          useProxy,
+          proxyServer: proxyServer || null,
         }),
       });
       await refreshElectrum();
@@ -1087,7 +1461,7 @@ function attachHandlers() {
     elements.ftueImport.addEventListener("click", () => {
       setFtueDismissed(true);
       setView("settings");
-      openSettingsDisclosure("open");
+      openSettingsDisclosure("import");
       renderFtue();
       renderFtueCallout();
     });
@@ -1115,4 +1489,74 @@ async function init() {
   }
 }
 
-init();
+const __juncoExports = {
+  state,
+  elements,
+  normalizeView,
+  setView,
+  showToast,
+  formatBtcFromSats,
+  formatUsdFromSats,
+  formatSats,
+  formatDate,
+  formatTime,
+  normalizeHost,
+  isOnionHost,
+  resolveElectrumConnection,
+  updateElectrumProxyVisibility,
+  getPresetForConfig,
+  getElectrumFormValues,
+  setElectrumFormValues,
+  applyElectrumPreset,
+  syncElectrumForm,
+  apiFetch,
+  showAuthOverlay,
+  setFtueDismissed,
+  shouldShowFtue,
+  shouldShowFtueCallout,
+  renderFtue,
+  renderFtueCallout,
+  loadAuthStatus,
+  login,
+  setupPassword,
+  logout,
+  bootstrap,
+  refreshWalletList,
+  openWallet,
+  refreshWalletData,
+  refreshPrice,
+  requestReceive,
+  sendPayment,
+  refreshElectrum,
+  render,
+  renderWalletList,
+  renderHome,
+  renderWalletContext,
+  renderHomeActions,
+  applyWalletRestrictions,
+  buildSmoothPath,
+  renderSparkline,
+  renderHomeActivity,
+  renderTransactions,
+  renderSendReview,
+  renderReceive,
+  renderElectrum,
+  renderMnemonicPanel,
+  openSettingsDisclosure,
+  handleViewButtons,
+  attachHandlers,
+  init,
+};
+
+if (typeof window !== "undefined") {
+  window.__junco = __juncoExports;
+  window.__juncoState = state;
+  window.__juncoElements = elements;
+  if (!window.__JUNCO_TEST__) {
+    init();
+  }
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = __juncoExports;
+}
