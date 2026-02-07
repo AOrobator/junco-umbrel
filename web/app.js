@@ -998,6 +998,31 @@ function renderReceive() {
   elements.receiveStatus.textContent = "Waiting";
 }
 
+function friendlyError(raw) {
+  if (!raw) return "No server configured yet.";
+  const lower = raw.toLowerCase();
+  if (lower.includes("url not specified") || lower.includes("not configured")) {
+    return "No server configured yet.";
+  }
+  if (lower.includes("connection refused") || lower.includes("connect timed out")) {
+    return "Could not reach the server.";
+  }
+  if (lower.includes("ssl") || lower.includes("certificate") || lower.includes("handshake")) {
+    return "SSL/TLS connection failed.";
+  }
+  if (lower.includes("unknown host") || lower.includes("resolve")) {
+    return "Server hostname not found.";
+  }
+  const lastColon = raw.lastIndexOf(":");
+  if (lastColon !== -1) {
+    const tail = raw.slice(lastColon + 1).trim();
+    if (tail.length > 0 && tail.length < 120 && !/^\w+\.\w+\.\w+/.test(tail)) {
+      return tail.charAt(0).toUpperCase() + tail.slice(1);
+    }
+  }
+  return "Unable to connect.";
+}
+
 function renderElectrum() {
   const status = state.electrum.status;
   if (!status) {
@@ -1012,7 +1037,7 @@ function renderElectrum() {
   } else {
     elements.electrumStatusDetail.textContent = "Disconnected";
     elements.headerElectrum.textContent = "Disconnected";
-    elements.electrumDetail.textContent = status.error || "No server configured yet.";
+    elements.electrumDetail.textContent = friendlyError(status.error);
   }
 
   if (status?.tipHeight !== null && status?.tipHeight !== undefined) {
@@ -1562,6 +1587,7 @@ const __juncoExports = {
   renderTransactions,
   renderSendReview,
   renderReceive,
+  friendlyError,
   renderElectrum,
   renderMnemonicPanel,
   updateGenerateToggle,
