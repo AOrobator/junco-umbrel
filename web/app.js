@@ -200,18 +200,27 @@ function formatTime(timestampSec) {
 
 const electrumPresets = [
   {
+    id: "local-electrs",
+    label: "Local Electrs (Umbrel)",
+    host: "electrs_electrs_1",
+    port: 50001,
+    ssl: false,
+  },
+  {
     id: "mempool-space",
-    label: "mempool.space (public)",
+    label: "mempool.space (via Tor)",
     host: "electrum.mempool.space",
     port: 50002,
     ssl: true,
+    useTor: true,
   },
   {
     id: "mempool-guide",
-    label: "mempool.guide (public)",
+    label: "mempool.guide (via Tor)",
     host: "electrum.mempool.guide",
     port: 50002,
     ssl: true,
+    useTor: true,
   },
 ];
 
@@ -221,7 +230,7 @@ const electrumPresetMap = electrumPresets.reduce((acc, preset) => {
   return acc;
 }, {});
 
-const torProxyDefault = "tor:9050";
+const torProxyDefault = "10.21.21.11:9050";
 
 function normalizeHost(host) {
   return (host || "").trim().toLowerCase();
@@ -314,13 +323,14 @@ function applyElectrumPreset(presetId, overrides = {}) {
   }
   const preset = electrumPresetMap[presetId];
   if (!preset) return;
+  const useProxy = overrides.useProxy ?? preset.useTor ?? false;
   setElectrumFormValues({
     host: preset.host,
     port: preset.port?.toString() ?? "",
     ssl: preset.ssl ? "true" : "false",
     certificatePath: "",
-    useProxy: overrides.useProxy ?? false,
-    proxyServer: overrides.proxyServer ?? "",
+    useProxy,
+    proxyServer: useProxy ? (overrides.proxyServer || torProxyDefault) : (overrides.proxyServer ?? ""),
   });
 }
 
