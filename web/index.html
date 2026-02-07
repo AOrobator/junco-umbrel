@@ -6,7 +6,7 @@
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f7f3ed" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f1412" />
     <title>Junco - Sparrow for Umbrel</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=7" />
   </head>
   <body>
     <div
@@ -403,7 +403,25 @@
           <div class="grid two">
             <div class="card" style="--delay: 0s">
               <h3>Wallets</h3>
-              <div class="wallet-list" id="wallet-list" data-testid="wallet-list"></div>
+              <div class="active-wallet" id="active-wallet" data-testid="active-wallet">
+                <p class="muted">No wallet open.</p>
+              </div>
+              <details class="disclosure" id="open-wallet-disclosure">
+                <summary>Open existing wallet</summary>
+                <div class="disclosure-body">
+                  <div class="disclosure-content">
+                    <form id="open-wallet-form" class="form" data-testid="open-wallet-form">
+                      <div class="form-row">
+                        <label>Choose a wallet</label>
+                        <select name="wallet" id="open-wallet-select" required data-testid="open-wallet-select">
+                          <option value="">Select a wallet</option>
+                        </select>
+                      </div>
+                      <button class="btn ghost" type="submit">Open wallet</button>
+                    </form>
+                  </div>
+                </div>
+              </details>
               <details class="disclosure" id="create-wallet-disclosure">
                 <summary>Create a new wallet</summary>
                 <div class="disclosure-body">
@@ -500,7 +518,7 @@
                         <label>Seed phrase (12 or 24 words)</label>
                         <textarea name="mnemonic" rows="3" placeholder="abandon ability able ..."></textarea>
                       </div>
-                      <div class="form-row is-hidden" id="import-passphrase-row">
+                      <div class="form-row" id="import-passphrase-row">
                         <label>Passphrase (optional)</label>
                         <input name="passphrase" type="password" placeholder="BIP39 passphrase" />
                       </div>
@@ -527,22 +545,6 @@
                 </div>
               </details>
 
-              <details class="disclosure" id="open-wallet-disclosure">
-                <summary>Open existing wallet</summary>
-                <div class="disclosure-body">
-                  <div class="disclosure-content">
-                    <form id="open-wallet-form" class="form" data-testid="open-wallet-form">
-                      <div class="form-row">
-                        <label>Choose a wallet</label>
-                        <select name="wallet" id="open-wallet-select" required data-testid="open-wallet-select">
-                          <option value="">Select a wallet</option>
-                        </select>
-                      </div>
-                      <button class="btn ghost" type="submit">Open wallet</button>
-                    </form>
-                  </div>
-                </div>
-              </details>
             </div>
 
             <div class="card" style="--delay: 0.1s">
@@ -622,6 +624,27 @@
                 </div>
               </details>
             </div>
+
+            <div class="card" style="--delay: 0.2s">
+              <h3>Transaction explorer</h3>
+              <p class="muted">Choose how to view transactions on-chain. For best privacy, use your local Mempool instance.</p>
+              <div class="form">
+                <div class="form-row">
+                  <label>Explorer</label>
+                  <select id="explorer-preset">
+                    <option value="none">None (disabled)</option>
+                    <option value="local-mempool">Local Mempool (Umbrel)</option>
+                    <option value="mempool-space">mempool.space</option>
+                    <option value="custom">Custom URL</option>
+                  </select>
+                </div>
+                <div class="form-row is-hidden" id="explorer-custom-row">
+                  <label>Custom URL pattern</label>
+                  <input id="explorer-custom-url" type="text" placeholder="https://example.com/tx/{txid}" />
+                  <p class="muted">Use <code>{txid}</code> as a placeholder for the transaction ID.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </main>
@@ -649,8 +672,18 @@
       </a>
     </nav>
 
+    <div class="tx-detail-overlay is-hidden" id="tx-detail-overlay" role="dialog" aria-modal="true">
+      <div class="tx-detail-card" id="tx-detail-card">
+        <div class="tx-detail-header">
+          <h3>Details</h3>
+          <button class="tx-detail-close" id="tx-detail-close" type="button" aria-label="Close">&times;</button>
+        </div>
+        <div class="tx-detail-body" id="tx-detail-body"></div>
+      </div>
+    </div>
+
     <div class="toast" id="toast" role="status" aria-live="polite" data-testid="toast"></div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=7"></script>
   </body>
 </html>

@@ -252,6 +252,54 @@ describe("wallet rendering and flows", () => {
   });
 });
 
+describe("transaction detail modal", () => {
+  it("opens and closes the detail modal", async () => {
+    const app = await loadApp();
+
+    const tx = {
+      valueSats: -50000,
+      confirmations: 12,
+      timestamp: 1710000000,
+      txid: "abc123def456789",
+      feeRate: 8,
+      feeSats: 1200,
+      label: "Payment",
+    };
+    // Explorer is unconfigured by default — no link should appear
+    app.openTxDetail(tx);
+    const overlay = document.getElementById("tx-detail-overlay");
+    expect(overlay.classList.contains("is-hidden")).toBe(false);
+    const body = document.getElementById("tx-detail-body");
+    expect(body.textContent).toContain("Sent BTC");
+    expect(body.textContent).toContain("12x");
+    expect(body.textContent).toContain("abc123def456789");
+    expect(body.textContent).toContain("8 sat/vB");
+    expect(body.textContent).not.toContain("View in explorer");
+    expect(body.querySelector("a")).toBe(null);
+
+    // After configuring explorer, the link should appear
+    app.closeTxDetail();
+    app.setTxExplorer("mempool-space");
+    app.openTxDetail(tx);
+    expect(body.textContent).toContain("View in explorer");
+    expect(body.querySelector("a").href).toContain("abc123def456789");
+
+    app.closeTxDetail();
+    expect(overlay.classList.contains("is-hidden")).toBe(true);
+  });
+
+  it("shows received transaction details", async () => {
+    const app = await loadApp();
+
+    app.openTxDetail({ valueSats: 100000, confirmations: 0, timestamp: 0 });
+    const body = document.getElementById("tx-detail-body");
+    expect(body.textContent).toContain("Received BTC");
+    expect(body.textContent).toContain("Pending");
+
+    app.closeTxDetail();
+  });
+});
+
 describe("async flows", () => {
   it("refreshes wallet list and electrum status", async () => {
     const app = await loadApp();

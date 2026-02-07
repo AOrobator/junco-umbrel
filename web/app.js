@@ -38,6 +38,8 @@ const state = {
   ftueStep: 1,
   ftueDismissed: savedFtueDismissed,
   homeTxFilter: "all",
+  txExplorerUrl: "",
+  txExplorerPreset: "none",
   electrum: {
     config: null,
     status: null,
@@ -51,7 +53,7 @@ const elements = {
   app: document.querySelector(".app"),
   views: document.querySelectorAll(".view"),
   navButtons: document.querySelectorAll("[data-view-target]"),
-  walletList: document.getElementById("wallet-list"),
+  activeWallet: document.getElementById("active-wallet"),
   createWalletForm: document.getElementById("create-wallet-form"),
   importWalletForm: document.getElementById("import-wallet-form"),
   openWalletForm: document.getElementById("open-wallet-form"),
@@ -132,6 +134,13 @@ const elements = {
   ftueImport: document.getElementById("ftue-import-wallet"),
   ftueCallout: document.getElementById("ftue-callout"),
   ftueFinish: document.getElementById("ftue-finish"),
+  explorerPreset: document.getElementById("explorer-preset"),
+  explorerCustomRow: document.getElementById("explorer-custom-row"),
+  explorerCustomUrl: document.getElementById("explorer-custom-url"),
+  txDetailOverlay: document.getElementById("tx-detail-overlay"),
+  txDetailCard: document.getElementById("tx-detail-card"),
+  txDetailBody: document.getElementById("tx-detail-body"),
+  txDetailClose: document.getElementById("tx-detail-close"),
 };
 
 function normalizeView(view) {
@@ -149,6 +158,31 @@ function setView(view) {
     if (!button.dataset.viewTarget) return;
     button.classList.toggle("is-active", button.dataset.viewTarget === state.view);
   });
+}
+
+async function copyToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (_) {
+      // fall through to execCommand fallback
+    }
+  }
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    document.execCommand("copy");
+    return true;
+  } catch (_) {
+    return false;
+  } finally {
+    document.body.removeChild(textarea);
+  }
 }
 
 function showToast(message, timeout = 2400) {
@@ -231,6 +265,28 @@ const electrumPresetMap = electrumPresets.reduce((acc, preset) => {
   acc[preset.id] = preset;
   return acc;
 }, {});
+
+const explorerPresets = [
+  { id: "none", label: "None (disabled)", url: "" },
+  { id: "local-mempool", label: "Local Mempool (Umbrel)", url: "http://umbrel.local:3006/tx/{txid}" },
+  { id: "mempool-space", label: "mempool.space", url: "https://mempool.space/tx/{txid}" },
+];
+
+const explorerStorageKey = "junco.txExplorer";
+const savedExplorer = (() => {
+  try {
+    const raw = localStorage.getItem(explorerStorageKey);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (_) {
+    return null;
+  }
+})();
+
+if (savedExplorer) {
+  state.txExplorerPreset = savedExplorer.preset || "none";
+  state.txExplorerUrl = savedExplorer.url || "";
+}
 
 const torProxyDefault = "10.21.21.11:9050";
 
@@ -426,6 +482,41 @@ function setFtueDismissed(value) {
     }
   } catch (_) {
     // ignore storage failures
+  }
+}
+
+function setTxExplorer(presetId, customUrl) {
+  const preset = explorerPresets.find((p) => p.id === presetId);
+  if (presetId === "custom") {
+    state.txExplorerPreset = "custom";
+    state.txExplorerUrl = customUrl || "";
+  } else if (preset) {
+    state.txExplorerPreset = presetId;
+    state.txExplorerUrl = preset.url;
+  } else {
+    state.txExplorerPreset = "none";
+    state.txExplorerUrl = "";
+  }
+  try {
+    localStorage.setItem(
+      explorerStorageKey,
+      JSON.stringify({ preset: state.txExplorerPreset, url: state.txExplorerUrl })
+    );
+  } catch (_) {
+    // ignore storage failures
+  }
+  syncExplorerForm();
+}
+
+function syncExplorerForm() {
+  if (elements.explorerPreset) {
+    elements.explorerPreset.value = state.txExplorerPreset;
+  }
+  if (elements.explorerCustomRow) {
+    elements.explorerCustomRow.classList.toggle("is-hidden", state.txExplorerPreset !== "custom");
+  }
+  if (elements.explorerCustomUrl && state.txExplorerPreset === "custom") {
+    elements.explorerCustomUrl.value = state.txExplorerUrl;
   }
 }
 
@@ -657,33 +748,28 @@ function render() {
 }
 
 function renderWalletList() {
-  elements.walletList.innerHTML = "";
-  const fragment = document.createDocumentFragment();
-  if (state.wallets.length === 0) {
-    const empty = document.createElement("p");
-    empty.className = "muted";
-    empty.textContent = "No wallets found yet.";
-    fragment.appendChild(empty);
-  } else {
-    state.wallets.forEach((name) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "wallet-item";
-      if (state.activeWallet === name) {
-        button.classList.add("is-active");
+  const activeWalletEl = document.getElementById("active-wallet");
+  if (activeWalletEl) {
+    activeWalletEl.textContent = "";
+    if (state.activeWallet) {
+      const name = document.createElement("p");
+      name.className = "active-wallet-name";
+      name.textContent = state.activeWallet;
+      const meta = document.createElement("p");
+      meta.className = "muted";
+      const summary = state.walletSummary;
+      if (summary) {
+        const watchTag = summary.watchOnly ? " · Watch-only" : "";
+        meta.textContent = `${summary.policyType || ""} · ${summary.scriptType || ""}${watchTag}`;
       }
-      const title = document.createElement("span");
-      title.className = "wallet-title";
-      title.textContent = name;
-      const status = document.createElement("span");
-      status.className = "wallet-meta";
-      status.textContent = state.activeWallet === name ? "Active" : "Open";
-      button.append(title, status);
-      button.addEventListener("click", () => openWallet(name));
-      fragment.appendChild(button);
-    });
+      activeWalletEl.append(name, meta);
+    } else {
+      const empty = document.createElement("p");
+      empty.className = "muted";
+      empty.textContent = "No wallet open.";
+      activeWalletEl.appendChild(empty);
+    }
   }
-  elements.walletList.appendChild(fragment);
 
   if (elements.openDisclosure) {
     elements.openDisclosure.classList.toggle("is-hidden", state.wallets.length === 0);
@@ -1046,12 +1132,169 @@ function renderHomeTransactions(transactions) {
       }
 
       item.append(dir, meta, amountWrap);
+      item.style.cursor = "pointer";
+      item.addEventListener("click", () => openTxDetail(tx));
       group.appendChild(item);
     });
 
     fragment.appendChild(group);
   });
   elements.homeTxList.appendChild(fragment);
+}
+
+function openTxDetail(tx) {
+  if (!elements.txDetailOverlay || !elements.txDetailBody) return;
+  elements.txDetailBody.textContent = "";
+
+  const isIncoming = tx.valueSats >= 0;
+  const confirmations = Number.isFinite(tx.confirmations) ? tx.confirmations : 0;
+
+  // Combined summary card: direction + amount
+  const summary = document.createElement("div");
+  summary.className = "tx-detail-summary";
+
+  const dirRow = document.createElement("div");
+  dirRow.className = "tx-detail-direction";
+  const dirBadge = document.createElement("span");
+  dirBadge.className = isIncoming ? "tx-direction in" : "tx-direction out";
+  dirBadge.textContent = isIncoming ? "\u2193" : "\u2191";
+  const dirText = document.createElement("div");
+  const dirLabel = document.createElement("p");
+  dirLabel.className = "tx-detail-dir-label";
+  dirLabel.textContent = isIncoming ? "Received BTC" : "Sent BTC";
+  const dirStatus = document.createElement("p");
+  dirStatus.className = "tx-detail-dir-status muted";
+  dirStatus.textContent = confirmations > 0
+    ? `Confirmed \u00b7 ${confirmations.toLocaleString()}x`
+    : "Pending";
+  dirText.append(dirLabel, dirStatus);
+  dirRow.append(dirBadge, dirText);
+  summary.appendChild(dirRow);
+
+  const amtRow = document.createElement("div");
+  amtRow.className = "tx-detail-amount-row";
+  const amtLabel = document.createElement("span");
+  amtLabel.className = isIncoming ? "tx-btc in" : "tx-btc out";
+  amtLabel.textContent = `${isIncoming ? "+" : "\u2212"}${formatBtcFromSats(Math.abs(tx.valueSats), 8)}`;
+  amtRow.appendChild(amtLabel);
+  const fiatAmt = formatUsdFromSats(Math.abs(tx.valueSats), state.priceUsd);
+  if (fiatAmt !== "\u2014") {
+    const fiatEl = document.createElement("span");
+    fiatEl.className = "tx-detail-fiat muted";
+    fiatEl.textContent = fiatAmt;
+    amtRow.appendChild(fiatEl);
+  }
+  summary.appendChild(amtRow);
+
+  if (tx.feeSats && !isIncoming) {
+    const feeRow = document.createElement("div");
+    feeRow.className = "tx-detail-amount-row";
+    const feeLabel = document.createElement("span");
+    feeLabel.className = "muted";
+    feeLabel.textContent = `Fee: ${formatBtcFromSats(tx.feeSats, 8)}`;
+    feeRow.appendChild(feeLabel);
+    const feeFiat = formatUsdFromSats(tx.feeSats, state.priceUsd);
+    if (feeFiat !== "\u2014") {
+      const feeFiatEl = document.createElement("span");
+      feeFiatEl.className = "tx-detail-fiat muted";
+      feeFiatEl.textContent = feeFiat;
+      feeRow.appendChild(feeFiatEl);
+    }
+    summary.appendChild(feeRow);
+  }
+
+  // Detail fields
+  const fields = document.createElement("div");
+  fields.className = "tx-detail-fields";
+
+  function addField(label, value, mono) {
+    const row = document.createElement("div");
+    row.className = "tx-detail-field";
+    const lbl = document.createElement("p");
+    lbl.className = "tx-detail-field-label muted";
+    lbl.textContent = label;
+    const val = document.createElement("p");
+    val.className = mono ? "tx-detail-field-value mono" : "tx-detail-field-value";
+    val.textContent = value;
+    row.append(lbl, val);
+    fields.appendChild(row);
+    return val;
+  }
+
+  if (tx.timestamp) {
+    const date = new Date(tx.timestamp * 1000);
+    const dateStr = date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    const timeStr = date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+    addField("Mined time", `${dateStr} at ${timeStr}`);
+  } else {
+    addField("Mined time", "Pending");
+  }
+
+  if (tx.txid) {
+    const txidRow = document.createElement("div");
+    txidRow.className = "tx-detail-field";
+    const txidLabel = document.createElement("p");
+    txidLabel.className = "tx-detail-field-label muted";
+    txidLabel.textContent = "Transaction ID";
+    const txidVal = document.createElement("p");
+    txidVal.className = "tx-detail-field-value mono tx-detail-txid";
+    txidVal.textContent = tx.txid;
+    txidVal.addEventListener("click", async () => {
+      const ok = await copyToClipboard(tx.txid);
+      showToast(ok ? "Transaction ID copied" : "Unable to copy");
+    });
+    txidRow.append(txidLabel, txidVal);
+    fields.appendChild(txidRow);
+  }
+
+  if (tx.feeRate) {
+    addField("Fee rate", `${tx.feeRate} sat/vB`);
+  }
+
+  // Explorer link
+  const actions = document.createElement("div");
+  actions.className = "tx-detail-actions";
+
+  if (tx.txid && state.txExplorerUrl) {
+    const explorerUrl = state.txExplorerUrl.replace("{txid}", tx.txid);
+    const link = document.createElement("a");
+    link.className = "btn ghost";
+    link.href = explorerUrl;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "View in explorer";
+    actions.appendChild(link);
+  } else if (tx.txid && !state.txExplorerUrl) {
+    const setupBtn = document.createElement("button");
+    setupBtn.className = "btn ghost";
+    setupBtn.type = "button";
+    setupBtn.textContent = "Set up block explorer";
+    setupBtn.addEventListener("click", () => {
+      closeTxDetail();
+      setView("settings");
+    });
+    actions.appendChild(setupBtn);
+  }
+
+  const copyBtn = document.createElement("button");
+  copyBtn.className = "btn ghost";
+  copyBtn.type = "button";
+  copyBtn.textContent = "Copy Tx ID";
+  copyBtn.addEventListener("click", async () => {
+    if (!tx.txid) return;
+    const ok = await copyToClipboard(tx.txid);
+    showToast(ok ? "Transaction ID copied" : "Unable to copy");
+  });
+  if (tx.txid) actions.appendChild(copyBtn);
+
+  elements.txDetailBody.append(summary, fields, actions);
+  elements.txDetailOverlay.classList.remove("is-hidden");
+}
+
+function closeTxDetail() {
+  if (elements.txDetailOverlay) {
+    elements.txDetailOverlay.classList.add("is-hidden");
+  }
 }
 
 function renderSendReview() {
@@ -1421,12 +1664,8 @@ function attachHandlers() {
       showToast("No address to copy");
       return;
     }
-    try {
-      await navigator.clipboard.writeText(state.pendingReceive.address);
-      showToast("Address copied");
-    } catch (_) {
-      showToast("Unable to copy");
-    }
+    const ok = await copyToClipboard(state.pendingReceive.address);
+    showToast(ok ? "Address copied" : "Unable to copy");
   });
 
   elements.newAddress.addEventListener("click", async () => {
@@ -1482,12 +1721,8 @@ function attachHandlers() {
   if (elements.copyMnemonic) {
     elements.copyMnemonic.addEventListener("click", async () => {
       if (!state.lastMnemonic) return;
-      try {
-        await navigator.clipboard.writeText(state.lastMnemonic);
-        showToast("Seed phrase copied");
-      } catch (_) {
-        showToast("Unable to copy seed phrase");
-      }
+      const ok = await copyToClipboard(state.lastMnemonic);
+      showToast(ok ? "Seed phrase copied" : "Unable to copy seed phrase");
     });
   }
 
@@ -1548,6 +1783,26 @@ function attachHandlers() {
       updateElectrumProxyVisibility(elements.electrumConnection.value);
       if (elements.electrumPreset?.value === "custom") {
         state.electrum.customDraft = getElectrumFormValues();
+      }
+    });
+  }
+
+  if (elements.explorerPreset) {
+    syncExplorerForm();
+    elements.explorerPreset.addEventListener("change", () => {
+      const presetId = elements.explorerPreset.value;
+      if (presetId === "custom") {
+        setTxExplorer("custom", elements.explorerCustomUrl?.value || "");
+      } else {
+        setTxExplorer(presetId);
+      }
+    });
+  }
+
+  if (elements.explorerCustomUrl) {
+    elements.explorerCustomUrl.addEventListener("input", () => {
+      if (state.txExplorerPreset === "custom") {
+        setTxExplorer("custom", elements.explorerCustomUrl.value.trim());
       }
     });
   }
@@ -1629,6 +1884,15 @@ function attachHandlers() {
       showToast(error.message || "Unable to log in");
     }
   });
+
+  if (elements.txDetailClose) {
+    elements.txDetailClose.addEventListener("click", closeTxDetail);
+  }
+  if (elements.txDetailOverlay) {
+    elements.txDetailOverlay.addEventListener("click", (e) => {
+      if (e.target === elements.txDetailOverlay) closeTxDetail();
+    });
+  }
 
   elements.authLogout.addEventListener("click", async () => {
     try {
@@ -1720,6 +1984,7 @@ const __juncoExports = {
   elements,
   normalizeView,
   setView,
+  copyToClipboard,
   showToast,
   formatBtcFromSats,
   formatUsdFromSats,
@@ -1764,6 +2029,10 @@ const __juncoExports = {
   buildStepPath,
   renderChart,
   renderHomeTransactions,
+  openTxDetail,
+  closeTxDetail,
+  setTxExplorer,
+  syncExplorerForm,
   renderSendReview,
   renderReceive,
   friendlyError,
