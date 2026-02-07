@@ -1162,7 +1162,10 @@ function attachHandlers() {
 
   elements.createWalletForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    const submitBtn = elements.createWalletForm.querySelector('button[type="submit"]');
+    const originalText = submitBtn?.textContent;
     try {
+      if (submitBtn) { submitBtn.textContent = "Creating\u2026"; submitBtn.disabled = true; }
       const data = new FormData(elements.createWalletForm);
       const name = data.get("name").trim();
       const scriptType = data.get("script");
@@ -1207,6 +1210,8 @@ function attachHandlers() {
       }
     } catch (error) {
       showToast(error.message || "Unable to create wallet");
+    } finally {
+      if (submitBtn) { submitBtn.textContent = originalText; submitBtn.disabled = false; }
     }
   });
 
@@ -1237,6 +1242,8 @@ function attachHandlers() {
 
     elements.importWalletForm.addEventListener("submit", async (event) => {
       event.preventDefault();
+      const submitBtn = elements.importWalletForm.querySelector('button[type="submit"]');
+      const originalText = submitBtn?.textContent;
       try {
         const data = new FormData(elements.importWalletForm);
         const importType = data.get("importType");
@@ -1272,6 +1279,8 @@ function attachHandlers() {
           };
         }
 
+        if (submitBtn) { submitBtn.textContent = "Importing\u2026"; submitBtn.disabled = true; }
+
         await apiFetch("/api/wallets/create", {
           method: "POST",
           body: JSON.stringify(body),
@@ -1288,6 +1297,8 @@ function attachHandlers() {
         showToast(importType === "xpub" ? "Watch-only wallet imported." : "Wallet imported.");
       } catch (error) {
         showToast(error.message || "Unable to import wallet");
+      } finally {
+        if (submitBtn) { submitBtn.textContent = originalText; submitBtn.disabled = false; }
       }
     });
   }
