@@ -179,7 +179,7 @@
                 data-view-target="settings"
                 data-disclosure-target="import"
               >
-                Import watch-only
+                Import wallet
               </button>
               <button
                 class="link"
@@ -211,7 +211,7 @@
                   Create wallet
                 </button>
                 <button class="btn ghost" data-view-target="settings" data-disclosure-target="import">
-                  Import watch-only
+                  Import wallet
                 </button>
                 <button
                   class="btn ghost"
@@ -453,7 +453,6 @@
               <p class="eyebrow">Settings</p>
               <h2>Wallet and connection</h2>
             </div>
-            <p class="muted">Advanced controls live here so the rest of the app stays focused.</p>
           </div>
 
           <div class="grid two">
@@ -537,33 +536,47 @@
               </details>
 
               <details class="disclosure" id="import-wallet-disclosure">
-                <summary>Import watch-only wallet</summary>
+                <summary>Import wallet</summary>
                 <div class="disclosure-body">
                   <div class="disclosure-content">
                     <form id="import-wallet-form" class="form" data-testid="import-wallet-form">
                       <div class="form-row">
-                        <label>Wallet name</label>
-                        <input name="name" type="text" placeholder="Junco Watch" required />
+                        <label>Import type</label>
+                        <select name="importType" id="import-type">
+                          <option value="seed">Seed phrase (full access)</option>
+                          <option value="xpub">Extended public key (watch-only)</option>
+                        </select>
                       </div>
                       <div class="form-row">
+                        <label>Wallet name</label>
+                        <input name="name" type="text" placeholder="My Wallet" required />
+                      </div>
+                      <div class="form-row" id="import-seed-row">
+                        <label>Seed phrase (12 or 24 words)</label>
+                        <textarea name="mnemonic" rows="3" placeholder="abandon ability able ..."></textarea>
+                      </div>
+                      <div class="form-row is-hidden" id="import-passphrase-row">
+                        <label>Passphrase (optional)</label>
+                        <input name="passphrase" type="password" placeholder="BIP39 passphrase" />
+                      </div>
+                      <div class="form-row is-hidden" id="import-xpub-row">
                         <label>Extended public key (xpub/zpub/vpub)</label>
-                        <input name="xpub" type="text" placeholder="xpub..." required />
+                        <input name="xpub" type="text" placeholder="xpub..." />
                       </div>
                       <div class="form-row">
                         <label>Script</label>
                         <select name="script">
-                          <option value="AUTO">Auto (from key)</option>
                           <option value="P2WPKH">P2WPKH (Native SegWit)</option>
                           <option value="P2TR">P2TR (Taproot)</option>
                           <option value="P2SH">P2SH (Nested SegWit)</option>
                           <option value="P2PKH">P2PKH (Legacy)</option>
                         </select>
                       </div>
-                      <div class="form-row">
+                      <div class="form-row is-hidden" id="import-derivation-row">
                         <label>Derivation path (optional)</label>
                         <input name="derivation" type="text" placeholder="m/84'/0'/0'" />
                       </div>
-                      <button class="btn ghost" type="submit">Import watch-only</button>
+                      <button class="btn ghost" type="submit">Import wallet</button>
                     </form>
                   </div>
                 </div>

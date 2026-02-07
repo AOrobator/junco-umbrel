@@ -82,6 +82,15 @@ proxy_pass $adapter_upstream;
 - Verified on Umbrel: Port/SSL fields stack vertically on mobile (720px CSS override works)
 - Reset auth after password was lost from previous session
 
+### Session 5 — Electrum Presets, Tor Proxy, FTUE Skip, Import Wallet (2026-02-07)
+- Added Local Electrs (`electrs_electrs_1:50001`, no SSL) as default Electrum preset
+- Public servers (mempool.space, mempool.guide) now route through Umbrel's shared Tor SOCKS proxy (`10.21.21.11:9050`) — port 50002 blocked on local network
+- Fixed Tor proxy hostname: `tor` resolved to per-app hidden service containers, `tor_proxy` not resolvable by Java in container — used raw IP `10.21.21.11`
+- FTUE "Finish setup" now skips to step 3 (wallet creation) when Electrum is already connected
+- Removed settings subtitle ("Advanced controls live here...")
+- Import wallet form now supports both seed phrase (full access) and xpub (watch-only) imports
+- Renamed all "Import watch-only" labels to "Import wallet"
+
 ## TODO
 - [ ] Push images to GHCR for production deployment (currently local registry only)
 - [ ] Add health checks to docker-compose

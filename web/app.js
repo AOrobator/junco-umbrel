@@ -709,7 +709,7 @@ function renderHome() {
   if (!state.walletSummary) {
     elements.homeWalletName.textContent = "No wallet yet";
     elements.homeWalletMeta.textContent =
-      "Create a wallet or import a watch-only wallet to get started.";
+      "Create a wallet or import an existing one to get started.";
     if (walletSummary) walletSummary.classList.add("is-hidden");
     if (walletDetail) walletDetail.classList.add("is-hidden");
     elements.networkPill.textContent = "—";
@@ -1216,34 +1216,76 @@ function attachHandlers() {
   }
 
   if (elements.importWalletForm) {
+    const importTypeSelect = document.getElementById("import-type");
+    const importSeedRow = document.getElementById("import-seed-row");
+    const importPassphraseRow = document.getElementById("import-passphrase-row");
+    const importXpubRow = document.getElementById("import-xpub-row");
+    const importDerivationRow = document.getElementById("import-derivation-row");
+
+    function toggleImportFields() {
+      const isSeed = importTypeSelect?.value === "seed";
+      if (importSeedRow) importSeedRow.classList.toggle("is-hidden", !isSeed);
+      if (importPassphraseRow) importPassphraseRow.classList.toggle("is-hidden", !isSeed);
+      if (importXpubRow) importXpubRow.classList.toggle("is-hidden", isSeed);
+      if (importDerivationRow) importDerivationRow.classList.toggle("is-hidden", isSeed);
+    }
+
+    if (importTypeSelect) {
+      importTypeSelect.addEventListener("change", toggleImportFields);
+      toggleImportFields();
+    }
+
     elements.importWalletForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       try {
         const data = new FormData(elements.importWalletForm);
+        const importType = data.get("importType");
         const name = data.get("name").trim();
-        const xpub = data.get("xpub").trim();
         const scriptType = data.get("script");
-        const derivationPath = data.get("derivation").trim();
 
-        await apiFetch("/api/wallets/create", {
-          method: "POST",
-          body: JSON.stringify({
+        let body;
+        if (importType === "xpub") {
+          const xpub = data.get("xpub").trim();
+          if (!xpub) {
+            showToast("Extended public key is required");
+            return;
+          }
+          body = {
+            name,
+            policyType: "SINGLE",
+            scriptType: scriptType === "AUTO" ? "P2WPKH" : scriptType,
+            xpub,
+            derivationPath: data.get("derivation")?.trim() || null,
+          };
+        } else {
+          const mnemonic = data.get("mnemonic").trim();
+          if (!mnemonic) {
+            showToast("Seed phrase is required");
+            return;
+          }
+          body = {
             name,
             policyType: "SINGLE",
             scriptType,
-            xpub,
-            derivationPath: derivationPath || null,
-          }),
+            mnemonic,
+            passphrase: data.get("passphrase")?.trim() || null,
+          };
+        }
+
+        await apiFetch("/api/wallets/create", {
+          method: "POST",
+          body: JSON.stringify(body),
         });
 
         state.lastMnemonic = null;
         state.pendingSeedWallet = null;
         renderMnemonicPanel();
         elements.importWalletForm.reset();
+        toggleImportFields();
         await refreshWalletList();
         await openWallet(name);
         setView("home");
-        showToast("Watch-only wallet imported.");
+        showToast(importType === "xpub" ? "Watch-only wallet imported." : "Wallet imported.");
       } catch (error) {
         showToast(error.message || "Unable to import wallet");
       }
