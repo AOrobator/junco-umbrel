@@ -121,6 +121,12 @@ body::before {
   display: grid;
 }
 
+.ftue-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .ftue-footer {
   display: flex;
   gap: 10px;

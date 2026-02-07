@@ -440,8 +440,12 @@ function renderFtue() {
   if (elements.ftueBack) {
     elements.ftueBack.disabled = state.ftueStep === 1;
   }
+  const isLastStep = state.ftueStep === total;
   if (elements.ftueNext) {
-    elements.ftueNext.classList.toggle("is-hidden", state.ftueStep === total);
+    elements.ftueNext.classList.toggle("is-hidden", isLastStep);
+  }
+  if (elements.ftueSkip) {
+    elements.ftueSkip.classList.toggle("is-hidden", isLastStep);
   }
 }
 
@@ -1506,6 +1510,14 @@ function attachHandlers() {
   }
   if (elements.ftueSkip) {
     elements.ftueSkip.addEventListener("click", () => {
+      setFtueDismissed(true);
+      renderFtue();
+      renderFtueCallout();
+    });
+  }
+  const ftueSkipFinal = document.getElementById("ftue-skip-final");
+  if (ftueSkipFinal) {
+    ftueSkipFinal.addEventListener("click", () => {
       setFtueDismissed(true);
       renderFtue();
       renderFtueCallout();
