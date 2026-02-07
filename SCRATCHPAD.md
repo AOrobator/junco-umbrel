@@ -61,7 +61,29 @@ proxy_pass $adapter_upstream;
 - Fixed nginx crash on restart: adapter upstream resolved at startup → switched to dynamic DNS resolution via Docker's embedded resolver (127.0.0.11)
 - Redeployed and verified all 5 containers stable
 
+### Session 3 — Settings Mobile Polish (2026-02-07)
+- Fixed settings page horizontal scroll: cards get `overflow: hidden` + `min-width: 0`, inputs get `width: 100%`
+- Create wallet: stacked entropy/passphrase vertically (eliminated overlap)
+- Create wallet: hide mnemonic input when "Generate a new seed phrase" is checked; hide entropy when unchecked
+- Import wallet: stacked script/derivation fields vertically
+- Hide "Open existing wallet" disclosure when no wallets exist
+- Electrum card: fixed content floating off card with overflow + word-break on status values
+- FTUE dialog: swapped button order (Skip left, Next right)
+- Fixed unit tests: replaced DOM write with DOMParser for jsdom/Node 20 compatibility
+- Fixed nvm lazy-load in `.zshrc` (replaced broken function wrappers with direct PATH setup)
+
+### Session 4 — Test Connection UX & Toast Fix (2026-02-07)
+- Fixed toast hidden behind mobile nav bar: added `z-index: 20` and repositioned to `bottom: 80px` on mobile (above the nav pill)
+- Fixed "Test connection" button appearing to do nothing:
+  - Button now shows "Testing..." with disabled state while the API call is in progress
+  - After save, disclosure auto-closes so user sees the updated connection status
+  - Toast message is contextual: "Connected to Electrum server" or "Settings saved — server not reachable"
+- Added `electrumDisclosure` to elements object (was a stray local variable)
+- Verified on Umbrel: Port/SSL fields stack vertically on mobile (720px CSS override works)
+- Reset auth after password was lost from previous session
+
 ## TODO
 - [ ] Push images to GHCR for production deployment (currently local registry only)
 - [ ] Add health checks to docker-compose
 - [ ] Test wallet creation / import flow on Umbrel
+- [ ] Push code to GitHub (git credentials issue: `sat-engineer` doesn't have access to `AOrobator/junco-umbrel`)

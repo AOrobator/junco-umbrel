@@ -987,6 +987,7 @@ textarea:disabled {
   transform: translateY(8px);
   transition: 0.2s ease;
   pointer-events: none;
+  z-index: 20;
 }
 
 .toast.is-visible {
@@ -1063,5 +1064,15 @@ textarea:disabled {
 
   .status-grid {
     grid-template-columns: 1fr;
+  }
+
+  .toast {
+    bottom: 80px;
+    right: 50%;
+    transform: translateX(50%) translateY(8px);
+  }
+
+  .toast.is-visible {
+    transform: translateX(50%) translateY(0);
   }
 }

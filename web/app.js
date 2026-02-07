@@ -59,6 +59,7 @@ const elements = {
   receiveForm: document.getElementById("receive-form"),
   sendForm: document.getElementById("send-form"),
   electrumForm: document.getElementById("electrum-form"),
+  electrumDisclosure: document.getElementById("electrum-disclosure"),
   transactionsList: document.getElementById("transactions-list"),
   toast: document.getElementById("toast"),
   createDisclosure: document.getElementById("create-wallet-disclosure"),
@@ -1092,9 +1093,8 @@ function openSettingsDisclosure(target) {
     elements.openDisclosure.open = true;
   }
   if (target === "electrum") {
-    const electrumDisclosure = document.getElementById("electrum-disclosure");
-    if (electrumDisclosure) {
-      electrumDisclosure.open = true;
+    if (elements.electrumDisclosure) {
+      elements.electrumDisclosure.open = true;
     }
   }
 }
@@ -1401,7 +1401,13 @@ function attachHandlers() {
 
   elements.electrumForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    const submitBtn = elements.electrumForm.querySelector('button[type="submit"]');
+    const originalText = submitBtn?.textContent;
     try {
+      if (submitBtn) {
+        submitBtn.textContent = "Testing\u2026";
+        submitBtn.disabled = true;
+      }
       const data = new FormData(elements.electrumForm);
       const host = data.get("host").trim();
       const port = parseInt(data.get("port"), 10) || null;
@@ -1426,9 +1432,21 @@ function attachHandlers() {
         }),
       });
       await refreshElectrum();
-      showToast("Electrum settings saved");
+      if (elements.electrumDisclosure) {
+        elements.electrumDisclosure.open = false;
+      }
+      showToast(
+        state.electrum.status?.connected
+          ? "Connected to Electrum server"
+          : "Settings saved — server not reachable"
+      );
     } catch (error) {
       showToast(error.message || "Unable to update Electrum");
+    } finally {
+      if (submitBtn) {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+      }
     }
   });
 
