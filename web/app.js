@@ -116,6 +116,9 @@ const elements = {
   createdMnemonic: document.getElementById("created-mnemonic"),
   copyMnemonic: document.getElementById("copy-mnemonic"),
   clearMnemonic: document.getElementById("clear-mnemonic"),
+  entropyRow: document.getElementById("entropy-row"),
+  mnemonicRow: document.getElementById("mnemonic-row"),
+  generateCheckbox: document.querySelector('#create-wallet-form input[name="generate"]'),
   ftueOverlay: document.getElementById("ftue-overlay"),
   ftueSteps: document.querySelectorAll("[data-ftue-step]"),
   ftueNext: document.getElementById("ftue-next"),
@@ -663,6 +666,10 @@ function renderWalletList() {
   }
   elements.walletList.appendChild(fragment);
 
+  if (elements.openDisclosure) {
+    elements.openDisclosure.classList.toggle("is-hidden", state.wallets.length === 0);
+  }
+
   if (elements.openWalletSelect) {
     elements.openWalletSelect.innerHTML = "";
     const placeholder = document.createElement("option");
@@ -1036,6 +1043,16 @@ function renderMnemonicPanel() {
   elements.mnemonicPanel.classList.remove("is-hidden");
 }
 
+function updateGenerateToggle() {
+  const generate = elements.generateCheckbox?.checked ?? true;
+  if (elements.entropyRow) {
+    elements.entropyRow.classList.toggle("is-hidden", !generate);
+  }
+  if (elements.mnemonicRow) {
+    elements.mnemonicRow.classList.toggle("is-hidden", generate);
+  }
+}
+
 function openSettingsDisclosure(target) {
   if (!target) return;
   if (target === "create") {
@@ -1143,6 +1160,11 @@ function attachHandlers() {
       showToast(error.message || "Unable to create wallet");
     }
   });
+
+  if (elements.generateCheckbox) {
+    elements.generateCheckbox.addEventListener("change", updateGenerateToggle);
+    updateGenerateToggle();
+  }
 
   if (elements.importWalletForm) {
     elements.importWalletForm.addEventListener("submit", async (event) => {
@@ -1542,6 +1564,7 @@ const __juncoExports = {
   renderReceive,
   renderElectrum,
   renderMnemonicPanel,
+  updateGenerateToggle,
   openSettingsDisclosure,
   handleViewButtons,
   attachHandlers,

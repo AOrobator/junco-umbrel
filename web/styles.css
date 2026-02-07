@@ -354,6 +354,8 @@ p {
   gap: 16px;
   animation: card-fade 0.6s ease;
   animation-delay: var(--delay, 0s);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .ftue-callout {
@@ -692,6 +694,9 @@ textarea {
   border: 1px solid var(--stroke);
   font: inherit;
   background: var(--surface-alt);
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 select {
@@ -722,6 +727,7 @@ textarea:disabled {
   border-radius: 16px;
   background: var(--surface-alt);
   overflow: hidden;
+  min-width: 0;
 }
 
 .disclosure > summary {
@@ -966,6 +972,7 @@ textarea:disabled {
 .status-value {
   font-size: 1.05rem;
   font-weight: 600;
+  word-break: break-word;
 }
 
 .toast {

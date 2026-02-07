@@ -30,6 +30,14 @@ Umbrel's compose system does NOT apply: `tty`, `stdin_open`, `security_opt`.
 - **TTY fix:** Server entrypoint uses `script -qc` to create a pseudo-TTY (Sparrow's lanterna terminal library needs `/dev/tty`)
 - **AppArmor fix:** Server entrypoint uses `/tmp/sparrow-data` as working directory with symlinks to persistent `/data` volume. Docker's `docker-default` AppArmor profile blocks Unix domain socket `bind()` on bind-mounted volumes. The lock file (`sparrow.lock`) is created on the overlay filesystem instead.
 
+### Nginx upstream resolution
+Nginx resolves `proxy_pass` hostnames at config load time. If the adapter container isn't ready, nginx exits with `host not found in upstream "adapter"`. Fix: use Docker's embedded DNS resolver with a variable so resolution happens at request time:
+```nginx
+resolver 127.0.0.11 valid=10s;
+set $adapter_upstream http://adapter:8081;
+proxy_pass $adapter_upstream;
+```
+
 ### Deployment
 - Uses SSH + rsync to build natively on Umbrel (no cross-compile needed, Umbrel is x86_64)
 - Local Docker registry on port 5555 (shared with alby-hub)
@@ -47,9 +55,13 @@ Umbrel's compose system does NOT apply: `tty`, `stdin_open`, `security_opt`.
 - Successfully deployed and verified all 5 containers running
 - Created `deploy-umbrel.sh` deploy script following alby-hub pattern
 
+### Session 2 — UI Fixes & Nginx Crash Fix (2026-02-07)
+- Fixed FTUE dialog: removed Sparrow-specific copy, simplified title, removed back button
+- Fixed settings page mobile layout: single-column grids at 720px breakpoint
+- Fixed nginx crash on restart: adapter upstream resolved at startup → switched to dynamic DNS resolution via Docker's embedded resolver (127.0.0.11)
+- Redeployed and verified all 5 containers stable
+
 ## TODO
-- [ ] UI: Fix FTUE dialog copy and remove back button
-- [ ] UI: Fix settings page mobile layout (horizontal scroll, overlapping components)
 - [ ] Push images to GHCR for production deployment (currently local registry only)
 - [ ] Add health checks to docker-compose
 - [ ] Test wallet creation / import flow on Umbrel

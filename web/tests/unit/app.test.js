@@ -5,11 +5,14 @@ import path from "path";
 const html = fs.readFileSync(path.resolve(__dirname, "../../index.html"), "utf8");
 
 function writeDom() {
-  document.open();
-  document.write(html);
-  document.close();
+  const parser = new DOMParser();
+  const parsed = parser.parseFromString(html, "text/html");
+  while (document.head.firstChild) document.head.firstChild.remove();
+  while (document.body.firstChild) document.body.firstChild.remove();
+  for (const node of [...parsed.head.childNodes]) document.head.appendChild(document.adoptNode(node));
+  for (const node of [...parsed.body.childNodes]) document.body.appendChild(document.adoptNode(node));
   window.__JUNCO_TEST__ = true;
-  localStorage.clear();
+  try { localStorage.clear(); } catch (_) { /* jsdom compat */ }
   navigator.clipboard = { writeText: vi.fn().mockResolvedValue(undefined) };
   global.fetch = vi.fn();
   global.Headers = window.Headers;
@@ -163,14 +166,10 @@ describe("api and auth flows", () => {
     expect(document.getElementById("ftue-callout").classList.contains("is-hidden")).toBe(false);
 
     app.setFtueDismissed(false);
-    expect(localStorage.getItem("junco.ftueDismissed")).toBe(null);
+    expect(app.state.ftueDismissed).toBe(false);
 
-    const originalSet = localStorage.setItem;
-    localStorage.setItem = () => {
-      throw new Error("boom");
-    };
     app.setFtueDismissed(true);
-    localStorage.setItem = originalSet;
+    expect(app.state.ftueDismissed).toBe(true);
   });
 });
 

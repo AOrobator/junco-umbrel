@@ -103,8 +103,8 @@
           </div>
         </div>
         <div class="ftue-footer">
-          <button class="btn" id="ftue-next" type="button">Next</button>
           <button class="btn ghost" id="ftue-skip" type="button">Skip for now</button>
+          <button class="btn" id="ftue-next" type="button">Next</button>
         </div>
       </div>
     </div>
@@ -482,24 +482,22 @@
                           <span>Generate a new seed phrase</span>
                         </label>
                       </div>
-                      <div class="form-row split">
-                        <div>
-                          <label>Entropy</label>
-                          <select name="entropy">
-                            <option value="128">128-bit (12 words)</option>
-                            <option value="160">160-bit (15 words)</option>
-                            <option value="192">192-bit (18 words)</option>
-                            <option value="224">224-bit (21 words)</option>
-                            <option value="256">256-bit (24 words)</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label>Passphrase (optional)</label>
-                          <input name="passphrase" type="password" placeholder="Extra word" />
-                        </div>
+                      <div class="form-row" id="entropy-row">
+                        <label>Entropy</label>
+                        <select name="entropy">
+                          <option value="128">128-bit (12 words)</option>
+                          <option value="160">160-bit (15 words)</option>
+                          <option value="192">192-bit (18 words)</option>
+                          <option value="224">224-bit (21 words)</option>
+                          <option value="256">256-bit (24 words)</option>
+                        </select>
                       </div>
                       <div class="form-row">
-                        <label>Mnemonic (if not generating)</label>
+                        <label>Passphrase (optional)</label>
+                        <input name="passphrase" type="password" placeholder="Extra word" />
+                      </div>
+                      <div class="form-row is-hidden" id="mnemonic-row">
+                        <label>Mnemonic</label>
                         <textarea
                           name="mnemonic"
                           rows="3"
@@ -550,21 +548,19 @@
                         <label>Extended public key (xpub/zpub/vpub)</label>
                         <input name="xpub" type="text" placeholder="xpub..." required />
                       </div>
-                      <div class="form-row split">
-                        <div>
-                          <label>Script</label>
-                          <select name="script">
-                            <option value="AUTO">Auto (from key)</option>
-                            <option value="P2WPKH">P2WPKH (Native SegWit)</option>
-                            <option value="P2TR">P2TR (Taproot)</option>
-                            <option value="P2SH">P2SH (Nested SegWit)</option>
-                            <option value="P2PKH">P2PKH (Legacy)</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label>Derivation path (optional)</label>
-                          <input name="derivation" type="text" placeholder="m/84'/0'/0'" />
-                        </div>
+                      <div class="form-row">
+                        <label>Script</label>
+                        <select name="script">
+                          <option value="AUTO">Auto (from key)</option>
+                          <option value="P2WPKH">P2WPKH (Native SegWit)</option>
+                          <option value="P2TR">P2TR (Taproot)</option>
+                          <option value="P2SH">P2SH (Nested SegWit)</option>
+                          <option value="P2PKH">P2PKH (Legacy)</option>
+                        </select>
+                      </div>
+                      <div class="form-row">
+                        <label>Derivation path (optional)</label>
+                        <input name="derivation" type="text" placeholder="m/84'/0'/0'" />
                       </div>
                       <button class="btn ghost" type="submit">Import watch-only</button>
                     </form>
