@@ -687,22 +687,25 @@ function renderWalletList() {
 }
 
 function renderHome() {
+  const walletSummary = document.getElementById("home-wallet-summary");
+  const walletDetail = document.getElementById("home-wallet-detail");
   if (!state.walletSummary) {
     elements.homeWalletName.textContent = "No wallet yet";
     elements.homeWalletMeta.textContent =
       "Create a wallet or import a watch-only wallet to get started.";
-    elements.homeBalance.textContent = "0.00000000 BTC";
-    elements.homeBalanceFiat.textContent = "—";
+    if (walletSummary) walletSummary.classList.add("is-hidden");
+    if (walletDetail) walletDetail.classList.add("is-hidden");
     elements.networkPill.textContent = "—";
     renderHomeActions(false);
     if (elements.homeCta) {
       elements.homeCta.classList.remove("is-hidden");
     }
-    renderSparkline([]);
     renderHomeActivity([]);
     applyWalletRestrictions();
     return;
   }
+  if (walletSummary) walletSummary.classList.remove("is-hidden");
+  if (walletDetail) walletDetail.classList.remove("is-hidden");
 
   elements.homeWalletName.textContent = state.walletSummary.name;
   const watchOnlyTag = state.walletSummary.watchOnly ? " · Watch-only" : "";
@@ -738,10 +741,14 @@ function renderWalletContext() {
 }
 
 function renderHomeActions(hasWallet) {
+  const card = document.getElementById("home-actions-card");
   const primary = document.getElementById("home-actions");
   const setup = document.getElementById("home-setup-actions");
   const openButton = document.getElementById("home-setup-open");
   const hasWallets = state.wallets.length > 0;
+  if (card) {
+    card.classList.toggle("is-hidden", !hasWallet);
+  }
   if (openButton) {
     openButton.classList.toggle("is-hidden", !hasWallets);
   }
