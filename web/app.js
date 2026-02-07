@@ -442,6 +442,9 @@ function renderFtue() {
   elements.app.classList.toggle("is-locked", show || !elements.authOverlay.classList.contains("is-hidden"));
   if (!show) return;
 
+  if (state.electrum.status?.connected && state.ftueStep < 3) {
+    state.ftueStep = 3;
+  }
   const total = elements.ftueSteps.length;
   state.ftueStep = Math.min(Math.max(state.ftueStep, 1), total);
   elements.ftueSteps.forEach((step) => {
@@ -1563,7 +1566,7 @@ function attachHandlers() {
   if (elements.ftueFinish) {
     elements.ftueFinish.addEventListener("click", () => {
       setFtueDismissed(false);
-      state.ftueStep = 1;
+      state.ftueStep = state.electrum.status?.connected ? 3 : 1;
       renderFtue();
       renderFtueCallout();
     });
