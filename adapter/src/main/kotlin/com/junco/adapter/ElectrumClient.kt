@@ -1,13 +1,14 @@
 package com.junco.adapter
 
-import com.sparrowwallet.drongo.Network
 import com.sparrowwallet.drongo.KeyPurpose
+import com.sparrowwallet.drongo.Network
 import com.sparrowwallet.drongo.wallet.BlockTransactionHash
 import com.sparrowwallet.drongo.wallet.KeystoreSource
 import com.sparrowwallet.drongo.wallet.Wallet
 import com.sparrowwallet.drongo.wallet.WalletNode
 import com.sparrowwallet.sparrow.io.Config
 import com.sparrowwallet.sparrow.io.Server
+import com.sparrowwallet.sparrow.net.BlockHeaderTip
 import com.sparrowwallet.sparrow.net.ElectrumServer
 import com.sparrowwallet.sparrow.net.ServerConfigException
 import com.sparrowwallet.sparrow.net.ServerType
@@ -27,7 +28,55 @@ interface ElectrumGateway {
     fun refreshWallet(wallet: Wallet): Int?
 }
 
-class ElectrumClient : ElectrumGateway {
+interface ElectrumRpc {
+    fun isConnected(): Boolean
+    fun close()
+    fun connect()
+    fun readRunnable(): Runnable
+    fun ping()
+    fun getServerVersion(): List<String>
+    fun subscribeBlockHeaders(): BlockHeaderTip
+    fun getHistory(wallet: Wallet): Map<WalletNode, Set<BlockTransactionHash>>
+    fun getReferencedTransactions(wallet: Wallet, nodeTxMap: Map<WalletNode, Set<BlockTransactionHash>>)
+    fun calculateNodeHistory(wallet: Wallet, nodeTxMap: Map<WalletNode, Set<BlockTransactionHash>>)
+    fun getScriptHash(node: WalletNode): String
+}
+
+class SparrowElectrumRpc : ElectrumRpc {
+    override fun isConnected(): Boolean = ElectrumServer.isConnected()
+
+    override fun close() {
+        ElectrumServer.closeActiveConnection()
+    }
+
+    override fun connect() {
+        ElectrumServer().connect()
+    }
+
+    override fun readRunnable(): Runnable = ElectrumServer.ReadRunnable()
+
+    override fun ping() {
+        ElectrumServer().ping()
+    }
+
+    override fun getServerVersion(): List<String> = ElectrumServer().getServerVersion()
+
+    override fun subscribeBlockHeaders(): BlockHeaderTip = ElectrumServer().subscribeBlockHeaders()
+
+    override fun getHistory(wallet: Wallet): Map<WalletNode, Set<BlockTransactionHash>> = ElectrumServer().getHistory(wallet)
+
+    override fun getReferencedTransactions(wallet: Wallet, nodeTxMap: Map<WalletNode, Set<BlockTransactionHash>>) {
+        ElectrumServer().getReferencedTransactions(wallet, nodeTxMap)
+    }
+
+    override fun calculateNodeHistory(wallet: Wallet, nodeTxMap: Map<WalletNode, Set<BlockTransactionHash>>) {
+        ElectrumServer().calculateNodeHistory(wallet, nodeTxMap)
+    }
+
+    override fun getScriptHash(node: WalletNode): String = ElectrumServer.getScriptHash(node)
+}
+
+class ElectrumClient(private val rpc: ElectrumRpc = SparrowElectrumRpc()) : ElectrumGateway {
     private val log = LoggerFactory.getLogger(ElectrumClient::class.java)
     private val lock = ReentrantLock()
     private var connected = false
@@ -64,8 +113,8 @@ class ElectrumClient : ElectrumGateway {
     fun reset() {
         lock.withLock {
             try {
-                if(ElectrumServer.isConnected()) {
-                    ElectrumServer.closeActiveConnection()
+                if(rpc.isConnected()) {
+                    rpc.close()
                 }
             } catch(_: Exception) {
                 // ignore
@@ -96,11 +145,10 @@ class ElectrumClient : ElectrumGateway {
 
     fun connectIfNeeded() {
         lock.withLock {
-            if(connected && ElectrumServer.isConnected()) return
+            if(connected && rpc.isConnected()) return
             log.info("Opening Electrum connection")
-            val electrumServer = ElectrumServer()
-            electrumServer.connect()
-            readThread = Thread(ElectrumServer.ReadRunnable(), "electrum-read").apply {
+            rpc.connect()
+            readThread = Thread(rpc.readRunnable(), "electrum-read").apply {
                 isDaemon = true
                 start()
             }
@@ -110,9 +158,8 @@ class ElectrumClient : ElectrumGateway {
 
     fun fetchTipHeight(): Int? {
         connectIfNeeded()
-        val electrumServer = ElectrumServer()
         log.info("Electrum RPC: blockchain.headers.subscribe")
-        val tip = electrumServer.subscribeBlockHeaders()
+        val tip = rpc.subscribeBlockHeaders()
         tipHeight = tip.height
         System.setProperty(Network.BLOCK_HEIGHT_PROPERTY, tip.height.toString())
         return tip.height
@@ -123,10 +170,9 @@ class ElectrumClient : ElectrumGateway {
             ensureConfigured()
             connectIfNeeded()
             log.info("Electrum RPC: server.ping")
-            val electrumServer = ElectrumServer()
-            electrumServer.ping()
+            rpc.ping()
             log.info("Electrum RPC: server.version")
-            val version = electrumServer.getServerVersion()
+            val version = rpc.getServerVersion()
             runCatching { fetchTipHeight() }
                 .onFailure { log.warn("Electrum tip height fetch failed", it) }
             version
@@ -139,16 +185,15 @@ class ElectrumClient : ElectrumGateway {
         return withTimeout {
             ensureConfigured()
             connectIfNeeded()
-            val electrumServer = ElectrumServer()
             log.info("Electrum refresh start wallet={} watchOnly={} scriptType={}", wallet.name, wallet.containsSource(KeystoreSource.SW_WATCH), wallet.scriptType)
             val tip = fetchTipHeight()
             log.info("Electrum RPC: blockchain.scripthash.get_history (wallet)")
-            val nodeTxMap = electrumServer.getHistory(wallet)
+            val nodeTxMap = rpc.getHistory(wallet)
             traceScriptHashHistory(wallet, nodeTxMap)
             log.info("Electrum RPC: blockchain.transaction.get (referenced)")
-            electrumServer.getReferencedTransactions(wallet, nodeTxMap)
+            rpc.getReferencedTransactions(wallet, nodeTxMap)
             log.info("Electrum RPC: calculate node history")
-            electrumServer.calculateNodeHistory(wallet, nodeTxMap)
+            rpc.calculateNodeHistory(wallet, nodeTxMap)
             wallet.setStoredBlockHeight(tip)
             log.info("Electrum refresh complete wallet={} tipHeight={}", wallet.name, tip)
             tip
@@ -168,7 +213,7 @@ class ElectrumClient : ElectrumGateway {
                 continue
             }
             for(node in nodes) {
-                val scriptHash = ElectrumServer.getScriptHash(node)
+                val scriptHash = rpc.getScriptHash(node)
                 val history = nodeTxMap[node]
                 val txCount = history?.size ?: 0
                 val address = runCatching { node.address?.toString() }.getOrNull()

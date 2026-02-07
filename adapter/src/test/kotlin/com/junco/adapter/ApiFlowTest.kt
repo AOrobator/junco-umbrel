@@ -243,6 +243,103 @@ class ApiFlowTest {
     }
 
     @Test
+    fun watchOnlyExplicitScriptTypeWinsWhenHeaderDiffers() = testApplication {
+        val dataDir = Files.createTempDirectory("junco-watch-explicit-test")
+        application {
+            juncoModule(AppConfig(dataDir, Network.TESTNET), FakeElectrumClient())
+        }
+
+        val client = createClient {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true; encodeDefaults = true })
+            }
+            install(HttpCookies)
+        }
+
+        val password = "correct-horse-battery-staple"
+        client.post("/api/auth/setup") {
+            contentType(ContentType.Application.Json)
+            setBody(AuthSetupRequest(password, password))
+        }
+
+        val login = client.post("/api/auth/login") {
+            contentType(ContentType.Application.Json)
+            setBody(AuthLoginRequest(password))
+        }.body<AuthStatusResponse>()
+        val csrf = login.csrfToken
+        assertNotNull(csrf)
+
+        val tpub =
+            "tpubD9429UXFGCTKJ9NdiNK4rC5ygqSUkginycYHccqSg5gkmyQ7PZRHNjk99M6a6Y3NY8ctEUUJvCu6iCCui8Ju3xrHRu3Ez1CKB4ZFoRZDdP9"
+        val createResponse = client.post("/api/wallets/create") {
+            contentType(ContentType.Application.Json)
+            header("X-CSRF-Token", csrf)
+            setBody(
+                CreateWalletRequest(
+                    name = "WatchOnlyExplicit",
+                    policyType = "SINGLE",
+                    scriptType = "P2WPKH",
+                    xpub = tpub,
+                    derivationPath = "m/44'/1'/0'"
+                )
+            )
+        }.body<CreateWalletResponse>()
+
+        assertEquals("WatchOnlyExplicit", createResponse.wallet.name)
+        assertTrue(createResponse.wallet.watchOnly)
+        assertEquals("P2WPKH", createResponse.wallet.scriptType)
+    }
+
+    @Test
+    fun watchOnlyRejectsInvalidDerivationPath() = testApplication {
+        val dataDir = Files.createTempDirectory("junco-watch-invalid-path-test")
+        application {
+            juncoModule(AppConfig(dataDir, Network.TESTNET), FakeElectrumClient())
+        }
+
+        val client = createClient {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true; encodeDefaults = true })
+            }
+            install(HttpCookies)
+        }
+
+        val password = "correct-horse-battery-staple"
+        client.post("/api/auth/setup") {
+            contentType(ContentType.Application.Json)
+            setBody(AuthSetupRequest(password, password))
+        }
+
+        val login = client.post("/api/auth/login") {
+            contentType(ContentType.Application.Json)
+            setBody(AuthLoginRequest(password))
+        }.body<AuthStatusResponse>()
+        val csrf = login.csrfToken
+        assertNotNull(csrf)
+
+        val tpub =
+            "tpubD9429UXFGCTKJ9NdiNK4rC5ygqSUkginycYHccqSg5gkmyQ7PZRHNjk99M6a6Y3NY8ctEUUJvCu6iCCui8Ju3xrHRu3Ez1CKB4ZFoRZDdP9"
+        val response = client.post("/api/wallets/create") {
+            contentType(ContentType.Application.Json)
+            header("X-CSRF-Token", csrf)
+            expectSuccess = false
+            setBody(
+                CreateWalletRequest(
+                    name = "WatchOnlyInvalidPath",
+                    policyType = "SINGLE",
+                    scriptType = "AUTO",
+                    xpub = tpub,
+                    derivationPath = "m/not-a-path"
+                )
+            )
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+        val error = response.body<ErrorResponse>()
+        assertTrue(error.error.contains("Invalid derivation path"))
+    }
+
+    @Test
     fun electrumStatusTimeout() = testApplication {
         val dataDir = Files.createTempDirectory("junco-timeout-test")
         application {

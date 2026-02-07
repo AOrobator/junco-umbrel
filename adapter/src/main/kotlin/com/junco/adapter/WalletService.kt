@@ -17,6 +17,7 @@ import com.sparrowwallet.drongo.crypto.InvalidPasswordException
 import com.sparrowwallet.drongo.wallet.*
 import com.sparrowwallet.sparrow.io.Storage
 import com.sparrowwallet.sparrow.io.PersistenceType
+import com.sparrowwallet.sparrow.net.ElectrumServer
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.security.SecureRandom
@@ -24,7 +25,24 @@ import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeoutException
 
-class WalletService(private val electrum: ElectrumGateway) {
+interface TransactionBroadcaster {
+    fun broadcast(transaction: com.sparrowwallet.drongo.protocol.Transaction, fee: Long?): com.sparrowwallet.drongo.protocol.Sha256Hash
+}
+
+class SparrowTransactionBroadcaster : TransactionBroadcaster {
+    override fun broadcast(
+        transaction: com.sparrowwallet.drongo.protocol.Transaction,
+        fee: Long?
+    ): com.sparrowwallet.drongo.protocol.Sha256Hash {
+        val electrumServer = ElectrumServer()
+        return electrumServer.broadcastTransaction(transaction, fee)
+    }
+}
+
+class WalletService(
+    private val electrum: ElectrumGateway,
+    private val broadcaster: TransactionBroadcaster = SparrowTransactionBroadcaster()
+) {
     data class WalletHandle(val wallet: Wallet, val storage: Storage, var lastUpdated: Long? = null)
 
     private val log = LoggerFactory.getLogger(WalletService::class.java)
@@ -229,8 +247,7 @@ class WalletService(private val electrum: ElectrumGateway) {
         }
 
         val tx = psbt.extractTransaction()
-        val electrumServer = com.sparrowwallet.sparrow.net.ElectrumServer()
-        val txid = electrumServer.broadcastTransaction(tx, psbt.fee)
+        val txid = broadcaster.broadcast(tx, psbt.fee)
         refresh(handle, allowFailure = true)
         return SendResponse(txid.toString(), psbt.fee, walletTx.total)
     }

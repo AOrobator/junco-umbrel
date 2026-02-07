@@ -3,9 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "devDependencies": {
-    "@playwright/test": "^1.49.0"
+    "@playwright/test": "^1.49.0",
+    "@vitest/coverage-v8": "^1.6.0",
+    "jsdom": "^24.0.0",
+    "vitest": "^1.6.0"
   },
   "scripts": {
-    "test:e2e": "playwright test"
+    "test:e2e": "./scripts/run-e2e.sh",
+    "test:e2e:playwright": "playwright test",
+    "test:scripts": "./scripts/tests/ensure-docker.test.sh && ./scripts/tests/docker-maintenance.test.sh",
+    "test:unit": "vitest run",
+    "test:coverage": "vitest run --coverage"
   }
 }
