@@ -1,8 +1,8 @@
-const allowedViews = ["home", "send", "receive", "activity", "settings"];
+const allowedViews = ["home", "send", "receive", "settings"];
 const viewAliases = {
   overview: "home",
   wallets: "settings",
-  transactions: "activity",
+  transactions: "home",
   electrum: "settings",
 };
 
@@ -37,7 +37,7 @@ const state = {
   pendingSeedWallet: null,
   ftueStep: 1,
   ftueDismissed: savedFtueDismissed,
-  txFilter: "all",
+  homeTxFilter: "all",
   electrum: {
     config: null,
     status: null,
@@ -60,20 +60,24 @@ const elements = {
   sendForm: document.getElementById("send-form"),
   electrumForm: document.getElementById("electrum-form"),
   electrumDisclosure: document.getElementById("electrum-disclosure"),
-  transactionsList: document.getElementById("transactions-list"),
   toast: document.getElementById("toast"),
   createDisclosure: document.getElementById("create-wallet-disclosure"),
   importDisclosure: document.getElementById("import-wallet-disclosure"),
   openDisclosure: document.getElementById("open-wallet-disclosure"),
-  homeActivityList: document.getElementById("home-activity-list"),
-  sparklineLine: document.getElementById("balance-sparkline"),
-  sparklineArea: document.getElementById("balance-sparkline-area"),
-  sparklineGlow: document.getElementById("balance-sparkline-glow"),
-  sparklineDot: document.getElementById("balance-sparkline-dot"),
+  homeTxList: document.getElementById("home-tx-list"),
+  homeTxCount: document.getElementById("home-tx-count"),
+  homeTxCard: document.getElementById("home-tx-card"),
+  chartSvg: document.getElementById("chart-svg"),
+  chartLine: document.getElementById("balance-chart-line"),
+  chartArea: document.getElementById("balance-chart-area"),
+  chartGlow: document.getElementById("balance-chart-glow"),
+  chartDot: document.getElementById("balance-chart-dot"),
+  chartGrid: document.getElementById("chart-grid"),
+  chartYAxis: document.getElementById("chart-y-axis"),
+  chartTooltip: document.getElementById("chart-tooltip"),
+  chartHoverLine: document.getElementById("chart-hover-line"),
+  chartHoverDot: document.getElementById("chart-hover-dot"),
   homeTrend: document.getElementById("home-balance-trend"),
-  balanceHigh: document.getElementById("balance-high"),
-  balanceLow: document.getElementById("balance-low"),
-  balanceRange: document.getElementById("balance-range"),
   homeWalletName: document.getElementById("home-wallet-name"),
   homeWalletMeta: document.getElementById("home-wallet-meta"),
   homeCta: document.getElementById("home-cta"),
@@ -82,8 +86,6 @@ const elements = {
   homeBalanceFiat: document.getElementById("home-balance-fiat"),
   networkPill: document.getElementById("network-pill"),
   headerElectrum: document.getElementById("header-electrum"),
-  transactionCount: document.getElementById("transaction-count"),
-  transactionBalance: document.getElementById("transaction-balance"),
   sendContext: document.getElementById("send-context"),
   receiveContext: document.getElementById("receive-context"),
   sendReview: document.getElementById("send-review"),
@@ -646,7 +648,6 @@ function render() {
   renderWalletList();
   renderHome();
   renderWalletContext();
-  renderTransactions();
   renderSendReview();
   renderReceive();
   renderElectrum();
@@ -717,7 +718,7 @@ function renderHome() {
     if (elements.homeCta) {
       elements.homeCta.classList.remove("is-hidden");
     }
-    renderHomeActivity([]);
+    renderHomeTransactions([]);
     applyWalletRestrictions();
     return;
   }
@@ -736,8 +737,8 @@ function renderHome() {
   if (elements.homeCta) {
     elements.homeCta.classList.add("is-hidden");
   }
-  renderSparkline(state.balanceHistory);
-  renderHomeActivity(state.transactions.slice(0, 3));
+  renderChart(state.balanceHistory);
+  renderHomeTransactions(state.transactions);
   applyWalletRestrictions();
 }
 
@@ -758,32 +759,18 @@ function renderWalletContext() {
 }
 
 function renderHomeActions(hasWallet) {
-  const card = document.getElementById("home-actions-card");
-  const primary = document.getElementById("home-actions");
-  const setup = document.getElementById("home-setup-actions");
-  const openButton = document.getElementById("home-setup-open");
-  const hasWallets = state.wallets.length > 0;
-  if (card) {
-    card.classList.toggle("is-hidden", !hasWallet);
-  }
-  if (openButton) {
-    openButton.classList.toggle("is-hidden", !hasWallets);
+  const balanceActions = document.getElementById("balance-actions");
+  if (balanceActions) {
+    balanceActions.classList.toggle("is-hidden", !hasWallet);
   }
   if (elements.homeCtaOpen) {
-    elements.homeCtaOpen.classList.toggle("is-hidden", !hasWallets);
-  }
-  if (hasWallet) {
-    primary.classList.remove("is-hidden");
-    setup.classList.add("is-hidden");
-  } else {
-    primary.classList.add("is-hidden");
-    setup.classList.remove("is-hidden");
+    elements.homeCtaOpen.classList.toggle("is-hidden", state.wallets.length === 0);
   }
 }
 
 function applyWalletRestrictions() {
   const watchOnly = Boolean(state.walletSummary?.watchOnly);
-  const homeSendButton = document.querySelector("#home-actions [data-view-target='send']");
+  const homeSendButton = document.getElementById("balance-send-btn");
   if (homeSendButton) {
     homeSendButton.disabled = watchOnly;
     homeSendButton.classList.toggle("is-disabled", watchOnly);
@@ -819,59 +806,87 @@ function buildSmoothPath(points) {
   return d;
 }
 
-function renderSparkline(history) {
+function buildStepPath(points) {
+  if (!points || points.length === 0) return "";
+  if (points.length === 1) {
+    return `M ${points[0].x.toFixed(2)},${points[0].y.toFixed(2)}`;
+  }
+  let d = `M ${points[0].x.toFixed(2)},${points[0].y.toFixed(2)}`;
+  for (let i = 1; i < points.length; i++) {
+    d += ` H ${points[i].x.toFixed(2)}`;
+    d += ` V ${points[i].y.toFixed(2)}`;
+  }
+  return d;
+}
+
+function renderChart(history) {
+  const width = 600;
+  const height = 200;
+  const pad = { top: 10, bottom: 10 };
+
   if (!history || history.length < 2) {
-    elements.sparklineLine.setAttribute("d", "");
-    elements.sparklineArea.setAttribute("d", "");
-    if (elements.sparklineGlow) {
-      elements.sparklineGlow.setAttribute("d", "");
-    }
-    if (elements.sparklineDot) {
-      elements.sparklineDot.setAttribute("r", "0");
-    }
+    elements.chartLine.setAttribute("d", "");
+    elements.chartArea.setAttribute("d", "");
+    if (elements.chartGlow) elements.chartGlow.setAttribute("d", "");
+    if (elements.chartDot) elements.chartDot.setAttribute("r", "0");
     elements.homeTrend.textContent = "No history yet";
     elements.homeTrend.classList.remove("negative");
-    if (elements.balanceHigh) elements.balanceHigh.textContent = "—";
-    if (elements.balanceLow) elements.balanceLow.textContent = "—";
-    if (elements.balanceRange) elements.balanceRange.textContent = "—";
+    if (elements.chartYAxis) elements.chartYAxis.textContent = "";
+    if (elements.chartGrid) elements.chartGrid.textContent = "";
     return;
   }
-  const points = history.map((point, index) => ({
-    x: index,
-    y: point.balanceSats,
-  }));
-  const minY = Math.min(...points.map((p) => p.y));
-  const maxY = Math.max(...points.map((p) => p.y));
-  const range = maxY - minY || 1;
-  const width = 100;
-  const height = 60;
-  const padding = 6;
 
-  const scaledPoints = points.map((p) => {
-    const x = (p.x / (points.length - 1)) * width;
-    const y = height - padding - ((p.y - minY) / range) * (height - padding * 2);
-    return { x, y };
+  const values = history.map((p) => p.balanceSats);
+  const minY = Math.min(...values);
+  const maxY = Math.max(...values);
+  const range = maxY - minY || 1;
+  const tickCount = 4;
+  const ticks = [];
+  for (let i = 0; i < tickCount; i++) {
+    ticks.push(minY + (range * i) / (tickCount - 1));
+  }
+
+  if (elements.chartYAxis) {
+    elements.chartYAxis.textContent = "";
+    [...ticks].reverse().forEach((val) => {
+      const label = document.createElement("span");
+      label.textContent = formatBtcFromSats(val, 4);
+      elements.chartYAxis.appendChild(label);
+    });
+  }
+
+  if (elements.chartGrid) {
+    elements.chartGrid.textContent = "";
+    ticks.forEach((val) => {
+      const y = height - pad.bottom - ((val - minY) / range) * (height - pad.top - pad.bottom);
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", "0");
+      line.setAttribute("x2", String(width));
+      line.setAttribute("y1", y.toFixed(2));
+      line.setAttribute("y2", y.toFixed(2));
+      elements.chartGrid.appendChild(line);
+    });
+  }
+
+  const scaledPoints = history.map((point, index) => {
+    const x = (index / (history.length - 1)) * width;
+    const y = height - pad.bottom - ((point.balanceSats - minY) / range) * (height - pad.top - pad.bottom);
+    return { x, y, sats: point.balanceSats, timestamp: point.timestamp };
   });
 
-  const linePath = buildSmoothPath(scaledPoints);
-  const baseY = height - padding;
-  const areaPath = `${linePath} L ${width.toFixed(2)},${baseY.toFixed(2)} L 0,${baseY.toFixed(2)} Z`;
-  elements.sparklineLine.setAttribute("d", linePath);
-  elements.sparklineArea.setAttribute("d", areaPath);
-  if (elements.sparklineGlow) {
-    elements.sparklineGlow.setAttribute("d", linePath);
-  }
-  if (elements.sparklineDot) {
-    const lastPoint = scaledPoints[scaledPoints.length - 1];
-    elements.sparklineDot.setAttribute("cx", lastPoint.x.toFixed(2));
-    elements.sparklineDot.setAttribute("cy", lastPoint.y.toFixed(2));
-    elements.sparklineDot.setAttribute("r", "2.4");
-  }
+  const linePath = buildStepPath(scaledPoints);
+  const baseY = height - pad.bottom;
+  const areaPath = `${linePath} H ${width.toFixed(2)} V ${baseY.toFixed(2)} H 0 Z`;
 
-  if (elements.balanceHigh) elements.balanceHigh.textContent = formatBtcFromSats(maxY, 6);
-  if (elements.balanceLow) elements.balanceLow.textContent = formatBtcFromSats(minY, 6);
-  if (elements.balanceRange) {
-    elements.balanceRange.textContent = `Range ${formatBtcFromSats(minY, 6)} -> ${formatBtcFromSats(maxY, 6)}`;
+  elements.chartLine.setAttribute("d", linePath);
+  elements.chartArea.setAttribute("d", areaPath);
+  if (elements.chartGlow) elements.chartGlow.setAttribute("d", linePath);
+
+  if (elements.chartDot) {
+    const lastPt = scaledPoints[scaledPoints.length - 1];
+    elements.chartDot.setAttribute("cx", lastPt.x.toFixed(2));
+    elements.chartDot.setAttribute("cy", lastPt.y.toFixed(2));
+    elements.chartDot.setAttribute("r", "3.5");
   }
 
   const first = history[0].balanceSats;
@@ -880,102 +895,163 @@ function renderSparkline(history) {
   const trendText = trend >= 0 ? `Up ${formatBtcFromSats(trend, 6)}` : `Down ${formatBtcFromSats(Math.abs(trend), 6)}`;
   elements.homeTrend.textContent = trendText;
   elements.homeTrend.classList.toggle("negative", trend < 0);
-}
 
-function renderHomeActivity(transactions) {
-  elements.homeActivityList.innerHTML = "";
-  if (!transactions || transactions.length === 0) {
-    const empty = document.createElement("p");
-    empty.className = "muted";
-    empty.textContent = "No activity yet.";
-    elements.homeActivityList.appendChild(empty);
-    return;
+  // Interactive hover
+  if (elements.chartSvg && !elements.chartSvg._chartListenerAttached) {
+    elements.chartSvg._chartListenerAttached = true;
+
+    function handleChartHover(event) {
+      const svg = elements.chartSvg;
+      const rect = svg.getBoundingClientRect();
+      const pts = renderChart._lastScaledPoints;
+      if (!pts || pts.length === 0) return;
+
+      const mouseX = ((event.clientX - rect.left) / rect.width) * width;
+      let closest = pts[0];
+      let closestDist = Math.abs(mouseX - closest.x);
+      for (let i = 1; i < pts.length; i++) {
+        const dist = Math.abs(mouseX - pts[i].x);
+        if (dist < closestDist) { closest = pts[i]; closestDist = dist; }
+      }
+
+      if (elements.chartHoverLine) {
+        elements.chartHoverLine.setAttribute("x1", closest.x.toFixed(2));
+        elements.chartHoverLine.setAttribute("x2", closest.x.toFixed(2));
+        elements.chartHoverLine.setAttribute("y1", "0");
+        elements.chartHoverLine.setAttribute("y2", String(height));
+        elements.chartHoverLine.style.display = "";
+      }
+      if (elements.chartHoverDot) {
+        elements.chartHoverDot.setAttribute("cx", closest.x.toFixed(2));
+        elements.chartHoverDot.setAttribute("cy", closest.y.toFixed(2));
+        elements.chartHoverDot.style.display = "";
+      }
+
+      if (elements.chartTooltip) {
+        const dateStr = closest.timestamp ? formatDate(closest.timestamp) : "\u2014";
+        const btcStr = formatBtcFromSats(closest.sats, 6);
+        const fiatStr = formatUsdFromSats(closest.sats, state.priceUsd);
+        elements.chartTooltip.textContent = "";
+        const dateEl = document.createElement("span");
+        dateEl.className = "chart-tooltip-date";
+        dateEl.textContent = dateStr;
+        const btcEl = document.createElement("span");
+        btcEl.className = "chart-tooltip-btc";
+        btcEl.textContent = btcStr;
+        const fiatEl = document.createElement("span");
+        fiatEl.className = "chart-tooltip-fiat";
+        fiatEl.textContent = fiatStr;
+        elements.chartTooltip.append(dateEl, btcEl, fiatEl);
+        elements.chartTooltip.classList.add("is-visible");
+        const pctX = (closest.x / width) * 100;
+        const pctY = (closest.y / height) * 100;
+        elements.chartTooltip.style.left = `${pctX}%`;
+        elements.chartTooltip.style.top = `${pctY}%`;
+      }
+    }
+
+    function handleChartLeave() {
+      if (elements.chartHoverLine) elements.chartHoverLine.style.display = "none";
+      if (elements.chartHoverDot) elements.chartHoverDot.style.display = "none";
+      if (elements.chartTooltip) elements.chartTooltip.classList.remove("is-visible");
+    }
+
+    elements.chartSvg.addEventListener("mousemove", handleChartHover);
+    elements.chartSvg.addEventListener("touchmove", (e) => {
+      if (e.touches.length > 0) handleChartHover({ clientX: e.touches[0].clientX, clientY: e.touches[0].clientY });
+    }, { passive: true });
+    elements.chartSvg.addEventListener("mouseleave", handleChartLeave);
+    elements.chartSvg.addEventListener("touchend", handleChartLeave);
   }
-  const fragment = document.createDocumentFragment();
-  transactions.forEach((tx) => {
-    const item = document.createElement("div");
-    item.className = "activity-item";
-
-    const row = document.createElement("div");
-    row.className = "activity-row";
-
-    const meta = document.createElement("div");
-    const title = document.createElement("p");
-    const directionLabel = tx.valueSats >= 0 ? "Incoming" : "Outgoing";
-    title.textContent = tx.label || directionLabel;
-    const sub = document.createElement("p");
-    sub.className = "muted";
-    const confirmations = Number.isFinite(tx.confirmations) ? tx.confirmations : 0;
-    const status = confirmations > 0 ? `${confirmations} conf` : "Pending";
-    const time = formatTime(tx.timestamp);
-    const dateText = time ? `${formatDate(tx.timestamp)} · ${time}` : formatDate(tx.timestamp);
-    sub.textContent = `${dateText} · ${status}`;
-    meta.append(title, sub);
-
-    const amount = document.createElement("p");
-    amount.className = tx.valueSats >= 0 ? "activity-amount in" : "activity-amount out";
-    amount.textContent = formatBtcFromSats(Math.abs(tx.valueSats), 6);
-
-    row.append(meta, amount);
-    item.appendChild(row);
-    fragment.appendChild(item);
-  });
-  elements.homeActivityList.appendChild(fragment);
+  renderChart._lastScaledPoints = scaledPoints;
 }
 
-function renderTransactions() {
-  const filtered = state.transactions.filter((tx) => {
-    if (state.txFilter === "in") return tx.valueSats > 0;
-    if (state.txFilter === "out") return tx.valueSats < 0;
+function renderHomeTransactions(transactions) {
+  if (!elements.homeTxList) return;
+  elements.homeTxList.textContent = "";
+
+  const filtered = (transactions || []).filter((tx) => {
+    if (state.homeTxFilter === "in") return tx.valueSats > 0;
+    if (state.homeTxFilter === "out") return tx.valueSats < 0;
     return true;
   });
 
-  elements.transactionCount.textContent = `${filtered.length} transactions`;
-  const transactionFiat = formatUsdFromSats(state.balanceSats, state.priceUsd);
-  elements.transactionBalance.textContent =
-    transactionFiat === "—"
-      ? formatBtcFromSats(state.balanceSats, 6)
-      : `${formatBtcFromSats(state.balanceSats, 6)} · ${transactionFiat}`;
+  if (elements.homeTxCount) {
+    elements.homeTxCount.textContent = `${filtered.length} transaction${filtered.length !== 1 ? "s" : ""}`;
+  }
 
-  elements.transactionsList.innerHTML = "";
   if (filtered.length === 0) {
     const empty = document.createElement("p");
     empty.className = "muted";
     empty.textContent = "No transactions yet.";
-    elements.transactionsList.appendChild(empty);
+    elements.homeTxList.appendChild(empty);
     return;
   }
 
-  const fragment = document.createDocumentFragment();
+  // Group by date
+  const groups = {};
   filtered.forEach((tx) => {
-    const item = document.createElement("div");
-    item.className = "transaction";
-
-    const row = document.createElement("div");
-    row.className = "transaction-row";
-
-    const meta = document.createElement("div");
-    const title = document.createElement("p");
-    const directionLabel = tx.valueSats >= 0 ? "Incoming" : "Outgoing";
-    title.textContent = tx.label || directionLabel;
-    const sub = document.createElement("p");
-    sub.className = "muted";
-    const confirmations = Number.isFinite(tx.confirmations) ? tx.confirmations : 0;
-    const status = confirmations > 0 ? `${confirmations} conf` : "Pending";
-    const time = formatTime(tx.timestamp);
-    const dateText = time ? `${formatDate(tx.timestamp)} · ${time}` : formatDate(tx.timestamp);
-    sub.textContent = `${dateText} · ${status}`;
-    meta.append(title, sub);
-
-    const amount = document.createElement("p");
-    amount.className = tx.valueSats >= 0 ? "transaction-amount in" : "transaction-amount out";
-    amount.textContent = formatBtcFromSats(Math.abs(tx.valueSats), 6);
-
-    row.append(meta, amount);
-    item.appendChild(row);
-    fragment.appendChild(item);
+    const key = tx.timestamp ? formatDate(tx.timestamp) : "Pending";
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(tx);
   });
-  elements.transactionsList.appendChild(fragment);
+
+  const fragment = document.createDocumentFragment();
+  Object.entries(groups).forEach(([dateLabel, txs]) => {
+    const group = document.createElement("div");
+    group.className = "tx-date-group";
+    const header = document.createElement("p");
+    header.className = "tx-date-header";
+    header.textContent = dateLabel;
+    group.appendChild(header);
+
+    txs.forEach((tx) => {
+      const item = document.createElement("div");
+      item.className = "tx-item";
+
+      const isIncoming = tx.valueSats >= 0;
+
+      // Direction badge
+      const dir = document.createElement("span");
+      dir.className = isIncoming ? "tx-direction in" : "tx-direction out";
+      dir.textContent = isIncoming ? "\u2193" : "\u2191";
+
+      // Meta (label + time + confirmations)
+      const meta = document.createElement("div");
+      meta.className = "tx-meta";
+      const label = document.createElement("p");
+      label.className = "tx-label";
+      label.textContent = tx.label || (isIncoming ? "Received" : "Sent");
+      const sub = document.createElement("p");
+      sub.className = "tx-sub muted";
+      const confirmations = Number.isFinite(tx.confirmations) ? tx.confirmations : 0;
+      const confText = confirmations > 0 ? `${confirmations} conf` : "Pending";
+      const time = formatTime(tx.timestamp);
+      sub.textContent = time ? `${time} \u00b7 ${confText}` : confText;
+      meta.append(label, sub);
+
+      // Amount column
+      const amountWrap = document.createElement("div");
+      amountWrap.className = "tx-amount";
+      const btcAmt = document.createElement("p");
+      btcAmt.className = isIncoming ? "tx-btc in" : "tx-btc out";
+      btcAmt.textContent = `${isIncoming ? "+" : "\u2212"}${formatBtcFromSats(Math.abs(tx.valueSats), 6)}`;
+      amountWrap.appendChild(btcAmt);
+      const fiatAmt = formatUsdFromSats(Math.abs(tx.valueSats), state.priceUsd);
+      if (fiatAmt !== "\u2014") {
+        const fiatEl = document.createElement("p");
+        fiatEl.className = "tx-fiat muted";
+        fiatEl.textContent = fiatAmt;
+        amountWrap.appendChild(fiatEl);
+      }
+
+      item.append(dir, meta, amountWrap);
+      group.appendChild(item);
+    });
+
+    fragment.appendChild(group);
+  });
+  elements.homeTxList.appendChild(fragment);
 }
 
 function renderSendReview() {
@@ -1151,12 +1227,12 @@ function handleViewButtons() {
 function attachHandlers() {
   handleViewButtons();
 
-  document.querySelectorAll(".chip").forEach((chip) => {
+  document.querySelectorAll("[data-tx-filter]").forEach((chip) => {
     chip.addEventListener("click", () => {
-      state.txFilter = chip.dataset.filter;
-      document.querySelectorAll(".chip").forEach((btn) => btn.classList.remove("is-active"));
+      state.homeTxFilter = chip.dataset.txFilter;
+      document.querySelectorAll("[data-tx-filter]").forEach((btn) => btn.classList.remove("is-active"));
       chip.classList.add("is-active");
-      renderTransactions();
+      renderHomeTransactions(state.transactions);
     });
   });
 
@@ -1685,9 +1761,9 @@ const __juncoExports = {
   renderHomeActions,
   applyWalletRestrictions,
   buildSmoothPath,
-  renderSparkline,
-  renderHomeActivity,
-  renderTransactions,
+  buildStepPath,
+  renderChart,
+  renderHomeTransactions,
   renderSendReview,
   renderReceive,
   friendlyError,

@@ -76,9 +76,9 @@ describe("electrum form helpers", () => {
 
     app.updateElectrumProxyVisibility("tor");
     expect(document.getElementById("electrum-proxy-row").classList.contains("is-hidden")).toBe(false);
-    expect(document.querySelector('#electrum-form input[name="proxy"]').value).toBe("tor:9050");
+    expect(document.querySelector('#electrum-form input[name="proxy"]').value).toBe("10.21.21.11:9050");
 
-    expect(app.getPresetForConfig({})).toBe("mempool-space");
+    expect(app.getPresetForConfig({})).toBe("local-electrs");
     expect(
       app.getPresetForConfig({
         host: "electrum.mempool.space",
@@ -200,13 +200,13 @@ describe("wallet rendering and flows", () => {
     expect(document.getElementById("home-wallet-meta").textContent).toContain("Watch-only");
   });
 
-  it("handles sparkline and transactions filtering", async () => {
+  it("handles chart and transactions filtering", async () => {
     const app = await loadApp();
 
-    app.renderSparkline([]);
+    app.renderChart([]);
     expect(document.getElementById("home-balance-trend").textContent).toBe("No history yet");
 
-    app.renderSparkline([
+    app.renderChart([
       { timestamp: 1, balanceSats: 100 },
       { timestamp: 2, balanceSats: 50 },
     ]);
@@ -218,17 +218,17 @@ describe("wallet rendering and flows", () => {
     ];
     app.state.balanceSats = 500;
     app.state.priceUsd = 10000;
-    app.state.txFilter = "in";
-    app.renderTransactions();
-    expect(document.getElementById("transactions-list").textContent).toContain("Incoming");
+    app.state.homeTxFilter = "in";
+    app.renderHomeTransactions(app.state.transactions);
+    expect(document.getElementById("home-tx-list").textContent).toContain("Received");
 
-    app.state.txFilter = "out";
-    app.renderTransactions();
-    expect(document.getElementById("transactions-list").textContent).toContain("Outgoing");
+    app.state.homeTxFilter = "out";
+    app.renderHomeTransactions(app.state.transactions);
+    expect(document.getElementById("home-tx-list").textContent).toContain("Sent");
 
-    app.state.txFilter = "all";
-    app.renderHomeActivity([]);
-    expect(document.getElementById("home-activity-list").textContent).toContain("No activity");
+    app.state.homeTxFilter = "all";
+    app.renderHomeTransactions([]);
+    expect(document.getElementById("home-tx-list").textContent).toContain("No transactions");
   });
 
   it("updates receive and send review states", async () => {

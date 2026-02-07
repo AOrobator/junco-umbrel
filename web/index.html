@@ -126,7 +126,6 @@
           <button class="nav-btn" data-view-target="home">Home</button>
           <button class="nav-btn" data-view-target="send">Send</button>
           <button class="nav-btn" data-view-target="receive">Receive</button>
-          <button class="nav-btn" data-view-target="activity">Activity</button>
           <button class="nav-btn" data-view-target="settings">Settings</button>
           <a
             class="nav-btn github-nav"
@@ -193,38 +192,14 @@
             </div>
           </div>
 
-          <div class="grid two" id="home-wallet-summary">
+          <div class="grid" id="home-wallet-summary">
             <div class="card balance-card" style="--delay: 0s">
               <p class="card-label">Balance</p>
               <p class="balance" id="home-balance" data-testid="home-balance">0.0000 BTC</p>
               <p class="balance-sub" id="home-balance-fiat">$0.00</p>
-            </div>
-
-            <div class="card" id="home-actions-card" style="--delay: 0.08s">
-              <p class="card-label">Actions</p>
-              <div class="action-buttons" id="home-actions">
-                <button class="btn" data-view-target="send">Send</button>
+              <div class="balance-actions" id="balance-actions">
+                <button class="btn" id="balance-send-btn" data-view-target="send">Send</button>
                 <button class="btn ghost" data-view-target="receive">Receive</button>
-              </div>
-              <div class="action-buttons is-hidden" id="home-setup-actions">
-                <button class="btn" data-view-target="settings" data-disclosure-target="create">
-                  Create wallet
-                </button>
-                <button class="btn ghost" data-view-target="settings" data-disclosure-target="import">
-                  Import wallet
-                </button>
-                <button
-                  class="btn ghost"
-                  id="home-setup-open"
-                  data-view-target="settings"
-                  data-disclosure-target="open"
-                >
-                  Open existing
-                </button>
-              </div>
-              <div class="home-links">
-                <button class="link" data-view-target="activity">View activity</button>
-                <button class="link" data-view-target="settings">Manage wallet</button>
               </div>
             </div>
           </div>
@@ -240,70 +215,65 @@
             </div>
           </div>
 
-          <div class="grid two" id="home-wallet-detail">
+          <div class="grid" id="home-wallet-detail">
             <div class="card balance-chart" style="--delay: 0.12s">
               <div class="chart-head">
                 <div>
                   <p class="card-label">Balance trend</p>
                   <h3>Balance history</h3>
                 </div>
-                <div class="chart-metrics">
-                  <div class="chart-metric">
-                    <p class="metric-label">High</p>
-                    <p class="metric-value" id="balance-high">—</p>
-                  </div>
-                  <div class="chart-metric">
-                    <p class="metric-label">Low</p>
-                    <p class="metric-value" id="balance-low">—</p>
-                  </div>
-                </div>
               </div>
-              <div class="sparkline-wrap deluxe">
-                <svg class="sparkline" viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden="true">
-                  <defs>
-                    <linearGradient id="balance-area" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stop-color="rgba(26, 156, 122, 0.5)"></stop>
-                      <stop offset="100%" stop-color="rgba(26, 156, 122, 0.02)"></stop>
-                    </linearGradient>
-                    <linearGradient id="balance-line" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stop-color="rgba(26, 156, 122, 0.4)"></stop>
-                      <stop offset="45%" stop-color="rgba(26, 156, 122, 0.9)"></stop>
-                      <stop offset="100%" stop-color="rgba(240, 176, 78, 0.9)"></stop>
-                    </linearGradient>
-                    <filter id="balance-glow" x="-50%" y="-50%" width="200%" height="200%">
-                      <feGaussianBlur stdDeviation="3" result="blur"></feGaussianBlur>
-                      <feMerge>
-                        <feMergeNode in="blur"></feMergeNode>
-                        <feMergeNode in="SourceGraphic"></feMergeNode>
-                      </feMerge>
-                    </filter>
-                  </defs>
-                  <g class="sparkline-grid">
-                    <line x1="0" x2="100" y1="12" y2="12"></line>
-                    <line x1="0" x2="100" y1="28" y2="28"></line>
-                    <line x1="0" x2="100" y1="44" y2="44"></line>
-                  </g>
-                  <path id="balance-sparkline-area" class="sparkline-area" d=""></path>
-                  <path id="balance-sparkline-glow" class="sparkline-glow" d=""></path>
-                  <path id="balance-sparkline" class="sparkline-line" d=""></path>
-                  <circle id="balance-sparkline-dot" class="sparkline-dot" cx="0" cy="0" r="2.4"></circle>
-                </svg>
+              <div class="chart-container">
+                <div class="chart-y-axis" id="chart-y-axis"></div>
+                <div class="chart-canvas">
+                  <svg class="chart-svg" id="chart-svg" viewBox="0 0 600 200" preserveAspectRatio="none" aria-hidden="true">
+                    <defs>
+                      <linearGradient id="balance-area" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="rgba(26, 156, 122, 0.5)"></stop>
+                        <stop offset="100%" stop-color="rgba(26, 156, 122, 0.02)"></stop>
+                      </linearGradient>
+                      <linearGradient id="balance-line" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stop-color="rgba(26, 156, 122, 0.4)"></stop>
+                        <stop offset="45%" stop-color="rgba(26, 156, 122, 0.9)"></stop>
+                        <stop offset="100%" stop-color="rgba(240, 176, 78, 0.9)"></stop>
+                      </linearGradient>
+                      <filter id="balance-glow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="3" result="blur"></feGaussianBlur>
+                        <feMerge>
+                          <feMergeNode in="blur"></feMergeNode>
+                          <feMergeNode in="SourceGraphic"></feMergeNode>
+                        </feMerge>
+                      </filter>
+                    </defs>
+                    <g class="chart-grid" id="chart-grid"></g>
+                    <path id="balance-chart-area" class="sparkline-area" d=""></path>
+                    <path id="balance-chart-glow" class="sparkline-glow" d=""></path>
+                    <path id="balance-chart-line" class="sparkline-line" d=""></path>
+                    <circle id="balance-chart-dot" class="sparkline-dot" cx="0" cy="0" r="3.5"></circle>
+                    <line id="chart-hover-line" class="chart-hover-line" x1="0" y1="0" x2="0" y2="200" style="display:none"></line>
+                    <circle id="chart-hover-dot" class="chart-hover-dot" cx="0" cy="0" r="5" style="display:none"></circle>
+                  </svg>
+                  <div class="chart-tooltip" id="chart-tooltip"></div>
+                </div>
               </div>
               <div class="chart-foot">
                 <p class="trend" id="home-balance-trend">No history yet</p>
-                <p class="muted" id="balance-range">—</p>
               </div>
             </div>
 
-            <div class="card" style="--delay: 0.18s">
+            <div class="card" id="home-tx-card" style="--delay: 0.18s">
               <div class="card-head">
                 <div>
-                  <p class="card-label">Recent activity</p>
-                  <h3>Latest transactions</h3>
+                  <p class="card-label">Transactions</p>
+                  <h3 id="home-tx-count">0 transactions</h3>
                 </div>
-                <button class="link" data-view-target="activity">View all</button>
+                <div class="chip-row" id="home-chip-row">
+                  <button class="chip is-active" data-tx-filter="all">All</button>
+                  <button class="chip" data-tx-filter="in">Incoming</button>
+                  <button class="chip" data-tx-filter="out">Outgoing</button>
+                </div>
               </div>
-              <div class="activity-list" id="home-activity-list" data-testid="home-activity-list"></div>
+              <div class="tx-list" id="home-tx-list" data-testid="home-tx-list"></div>
             </div>
           </div>
         </section>
@@ -419,31 +389,6 @@
               </div>
               <p class="muted">Share via QR, copy the URI, or keep waiting for the payment.</p>
             </div>
-          </div>
-        </section>
-
-        <section class="view" data-view="activity">
-          <div class="section-head">
-            <div>
-              <p class="eyebrow">Activity</p>
-              <h2>All transactions</h2>
-            </div>
-            <div class="chip-row">
-              <button class="chip is-active" data-filter="all">All</button>
-              <button class="chip" data-filter="in">Incoming</button>
-              <button class="chip" data-filter="out">Outgoing</button>
-            </div>
-          </div>
-
-          <div class="card" style="--delay: 0s">
-            <div class="card-head">
-              <div>
-                <p class="card-label">Recent</p>
-                <h3 id="transaction-count">0 transactions</h3>
-              </div>
-              <span class="pill muted" id="transaction-balance">0.0000 BTC</span>
-            </div>
-            <div class="transaction-list" id="transactions-list" data-testid="transactions-list"></div>
           </div>
         </section>
 
@@ -687,7 +632,6 @@
       <button class="nav-btn" data-view-target="home">Home</button>
       <button class="nav-btn" data-view-target="send">Send</button>
       <button class="nav-btn" data-view-target="receive">Receive</button>
-      <button class="nav-btn" data-view-target="activity">Activity</button>
       <button class="nav-btn" data-view-target="settings">Settings</button>
       <a
         class="nav-btn github-nav"

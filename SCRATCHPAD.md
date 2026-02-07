@@ -91,6 +91,17 @@ proxy_pass $adapter_upstream;
 - Import wallet form now supports both seed phrase (full access) and xpub (watch-only) imports
 - Renamed all "Import watch-only" labels to "Import wallet"
 
+### Session 6 — Trezor-Inspired Homepage Refactor (2026-02-07)
+- Removed Activity page and its nav buttons (desktop + mobile) — transactions now live on the homepage
+- Merged Send/Receive buttons into the balance card; removed the separate Actions card
+- Replaced sparkline chart with proper interactive chart: y-axis labels (4 ticks), horizontal grid lines, larger SVG viewBox (600x200), hover tooltip showing date/BTC/fiat, hover vertical line + dot indicator
+- Full transaction list on homepage grouped by date, with direction badges (arrow up/down), time, confirmations pill, BTC + fiat amounts
+- Added filter chips (All / Incoming / Outgoing) to transaction list on homepage
+- Balance card is now full-width (removed 2-column grid for wallet summary)
+- Chart card is full-width with y-axis labels on the left side
+- Watch-only wallet correctly disables Send button in balance card
+- Responsive: y-axis labels shrink on mobile (720px), chart height reduces
+
 ## TODO
 - [ ] Push images to GHCR for production deployment (currently local registry only)
 - [ ] Add health checks to docker-compose
