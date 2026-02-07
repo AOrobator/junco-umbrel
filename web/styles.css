@@ -1045,4 +1045,16 @@ textarea:disabled {
   .section-head {
     flex-direction: column;
   }
+
+  .grid.two {
+    grid-template-columns: 1fr;
+  }
+
+  .form-row.split {
+    grid-template-columns: 1fr;
+  }
+
+  .status-grid {
+    grid-template-columns: 1fr;
+  }
 }

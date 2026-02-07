@@ -119,7 +119,7 @@ const elements = {
   ftueOverlay: document.getElementById("ftue-overlay"),
   ftueSteps: document.querySelectorAll("[data-ftue-step]"),
   ftueNext: document.getElementById("ftue-next"),
-  ftueBack: document.getElementById("ftue-back"),
+  ftueBack: null,
   ftueSkip: document.getElementById("ftue-skip"),
   ftueConfigure: document.getElementById("ftue-configure-electrum"),
   ftueCreate: document.getElementById("ftue-create-wallet"),
