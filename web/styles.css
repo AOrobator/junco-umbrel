@@ -987,7 +987,7 @@ textarea:disabled {
   transform: translateY(8px);
   transition: 0.2s ease;
   pointer-events: none;
-  z-index: 20;
+  z-index: 100;
 }
 
 .toast.is-visible {

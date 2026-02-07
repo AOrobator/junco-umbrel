@@ -92,8 +92,8 @@ class AuthManager(private val store: AuthStore) {
         if(isConfigured()) {
             throw ApiException.badRequest("Password already set")
         }
-        if(password.length < 8) {
-            throw ApiException.badRequest("Password must be at least 8 characters")
+        if(password.isEmpty()) {
+            throw ApiException.badRequest("Password cannot be empty")
         }
         if(password != confirm) {
             throw ApiException.badRequest("Passwords do not match")
