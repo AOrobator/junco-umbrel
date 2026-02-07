@@ -7,18 +7,31 @@ services:
       APP_PORT: 8080
 
   web:
-    image: ghcr.io/aorobator/junco-umbrel-web:0.1.0
+    image: localhost:5555/junco-umbrel-web:dev
+    restart: on-failure
+    stop_grace_period: 1m
+    depends_on:
+      - adapter
+      - server
+
+  adapter:
+    image: localhost:5555/junco-umbrel-adapter:dev
     restart: on-failure
     stop_grace_period: 1m
     environment:
-      PORT: 8080
-      SPARROW_SERVER_URL: http://server:18080
+      JUNCO_PORT: 8081
+      JUNCO_NETWORK: mainnet
+      JUNCO_DATA: /data
+    volumes:
+      - ${APP_DATA_DIR}/adapter:/data
     depends_on:
       - server
 
   server:
-    image: ghcr.io/aorobator/junco-umbrel-server:0.1.0
+    image: localhost:5555/junco-umbrel-server:dev
     restart: on-failure
     stop_grace_period: 1m
+    tty: true
+    stdin_open: true
     volumes:
       - ${APP_DATA_DIR}/server:/data
